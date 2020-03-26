@@ -162,7 +162,7 @@ def call_genes(in_fna, out_dir, threads):
     out.close()
     # call genes
     args_list = []
-    for i in range(1, iteration + 1):
+    for i in range(1, threads + 1):
         out = f"{tmp}/{i}"
         args_list.append([out])
     parallel(run_prodigal, args_list, threads)
