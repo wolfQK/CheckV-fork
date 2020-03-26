@@ -117,7 +117,7 @@ def run_diamond(out, db, faa, threads):
     p.wait()
 
 
-def run_hmmer(out, db, faa, evalue=10, threads=1):
+def run_hmmsearch(out, db, faa, evalue=10, threads=1):
     cmd = "hmmsearch "
     cmd += "--noali "
     cmd += "-o /dev/null "
@@ -126,7 +126,6 @@ def run_hmmer(out, db, faa, evalue=10, threads=1):
     cmd += f"--cpu {threads} "
     cmd += f"{db}/checkv_hmms.hmm "
     cmd += f"{faa} "
-    cmd += "&> /dev/null"
     p = sp.Popen(cmd, shell=True)
     p.wait()
 
@@ -147,7 +146,7 @@ def search_hmms(out_dir, threads, db_dir):
     for file in faa:
         out = f"{tmp}/{file.split('.')[0]}.hmmout"
         args_list.append([out, db_dir, out_dir + "/tmp/proteins/" + file])
-    parallel(run_hmmer, args_list, threads)
+    parallel(run_hmmsearch, args_list, threads)
     # cat output
     with open(f"{tmp}.txt", "w") as f:
         for file in os.listdir(tmp):
