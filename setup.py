@@ -4,8 +4,8 @@ setup(
     name="checkv",
     version="0.1.0",
     packages=find_packages(),
-    license="GNU General Public License v3.0",
-    description="Identify and remove incorrectly binned contigs from metagenome-assembled genomes.",
+    license="Modified BSD",
+    description="Assess the quality of metagenome-assembled viral genomes.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     install_requires=[
@@ -18,15 +18,16 @@ setup(
     keywords=[
         "bioinformatics",
         "genomics",
-        "metagenomics"
+        "metagenomics",
+        "viromics"
     ],
-    author="Stephen Nayfach, Antonio Pedro Camargo",
+    author="Stephen Nayfach, Antonio Pedro Camargo, Simon Roux",
     classifiers=[
         "Intended Audience :: Science/Research",
         "Natural Language :: English",
         "Topic :: Software Development :: Libraries",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
-        "License :: OSI Approved :: GNU General Public License (GPL)",
+        "License :: OSI Approved :: BSD",
         "Programming Language :: Python :: 3",
     ],
 )
