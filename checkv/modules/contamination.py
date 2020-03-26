@@ -10,7 +10,6 @@ import numpy as np
 from checkv import utility
 
 
-# classes
 class Genome:
     def __init__(self):
         pass
@@ -21,27 +20,18 @@ class Gene:
         pass
 
 
-# functions
-def parse_arguments():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawTextHelpFormatter, usage=argparse.SUPPRESS
-    )
-    parser.add_argument("program", help=argparse.SUPPRESS)
+def fetch_arguments(parser):
+    parser.set_defaults(func=main)
+    parser.set_defaults(program="contamination")
     parser.add_argument(
-        "-i",
-        dest="fna",
+        "input",
         type=str,
-        required=True,
-        metavar="PATH",
-        help="""Input nucleotide sequences in FASTA format""",
+        help="Input nucleotide sequences in FASTA format",
     )
     parser.add_argument(
-        "-o",
-        dest="out",
+        "output",
         type=str,
-        required=True,
-        metavar="PATH",
-        help="""Output directory""",
+        help="Output directory"
     )
     parser.add_argument(
         "-d",
@@ -49,7 +39,7 @@ def parse_arguments():
         type=str,
         required=False,
         metavar="PATH",
-        help="""Reference database path""",
+        help="Reference database path. By default the CHECKVDB environment variable is used",
     )
     parser.add_argument(
         "-t",
@@ -57,15 +47,14 @@ def parse_arguments():
         type=int,
         default=1,
         metavar="INT",
-        help="""Number of threads to use for DIAMOND and hmmsearch (1)""",
+        help="Number of threads to use for Prodigal and hmmsearch",
     )
     parser.add_argument(
         "--restart",
         action="store_true",
         default=False,
-        help="""Overwrite existing intermediate files. By default CheckV continues where program left off""",
+        help="Overwrite existing intermediate files. By default CheckV continues where program left off",
     )
-    return vars(parser.parse_args())
 
 
 def compute_gc(x):
@@ -74,11 +63,11 @@ def compute_gc(x):
 
 def annotate_genes(genomes, genes, args):
     """
-	1. read hmm bitscore cutoffs for viral/microbial annotation
-	2. assign genes to hmms according to their best hit using cutoffs from (1)
-	3. Assign gene categories (1 for viral, -1 for microbial)
-	4. Summarize the number of viral and microbial annotations per genome
-	"""
+    1. read hmm bitscore cutoffs for viral/microbial annotation
+    2. assign genes to hmms according to their best hit using cutoffs from (1)
+    3. Assign gene categories (1 for viral, -1 for microbial)
+    4. Summarize the number of viral and microbial annotations per genome
+    """
 
     # 1. read cutoffs
     hmm_info = {}
@@ -115,12 +104,12 @@ def define_regions(
     genome, genes, min_fract, min_genes=10, max_genes=50, gc_weight=0.02, delta_cutoff=1.2
 ):
     """
-	1. Determine win size based on <min_genes>, <max_genes>, <min_fract>
-	2. Score each possible breakpoint using combination of viral annotations and GC content
-	3. Identify breakpoints. See code below for list of rules for this process
-	4. Identify host/viral regions based on breakpoints
-	5. Return list of breakpoints and regions
-	"""
+    1. Determine win size based on <min_genes>, <max_genes>, <min_fract>
+    2. Score each possible breakpoint using combination of viral annotations and GC content
+    3. Identify breakpoints. See code below for list of rules for this process
+    4. Identify host/viral regions based on breakpoints
+    5. Return list of breakpoints and regions
+    """
 
     # 1. determine window size
     # window size adjusted based on contig length
@@ -131,9 +120,9 @@ def define_regions(
 
     # 2. Score each possible breakpoint
 
-    # 	get gene annotations and gc content
-    # 	microbial annotation = -1
-    # 	viral annotation = 1
+    # get gene annotations and gc content
+    # microbial annotation = -1
+    # viral annotation = 1
     my_genes = [genes[_] for _ in genome.genes]
 
     # compute deltas
@@ -192,13 +181,13 @@ def define_regions(
     for d in deltas:
 
         # filter breakpoint
-        # 	delta not significant
+        # delta not significant
         if abs(d["delta"]) < delta_cutoff:
             continue
-        # 	at least 4 total annotated genes
+        # at least 4 total annotated genes
         elif d["v1_len"] + d["v2_len"] < 4:
             continue
-        # 	<20% host genes in both windows
+        # <20% host genes in both windows
         elif d["win1_fract_host"] < 0.20 and d["win2_fract_host"] < 0.20:
             continue
 
@@ -272,10 +261,10 @@ def define_regions(
             region["type"] = "host"
         elif genome.count_viral == 0:
             region["type"] = "unclassified"
-    # 	last delta was postive, indicating a viral-host breakpoint
+    # last delta was postive, indicating a viral-host breakpoint
     elif regions[-1]["delta"] > 0:
         region["type"] = "host"
-    # 	last delta was negative, indicating a host-virus breakpoint
+    # last delta was negative, indicating a host-virus breakpoint
     else:
         region["type"] = "viral"
     regions.append(region)
@@ -283,19 +272,18 @@ def define_regions(
     return regions
 
 
-def main():
-    program_start = time.time()
-    args = parse_arguments()
+def main(args):
+    utility.check_executables(["prodigal", "hmmsearch"])
     args["db"] = utility.check_database(args["db"])
-    args["tmp"] = os.path.join(args["out"], "tmp")
-    if not os.path.exists(args["out"]):
-        os.makedirs(args["out"])
+    args["tmp"] = os.path.join(args["output"], "tmp")
+    if not os.path.exists(args["output"]):
+        os.makedirs(args["output"])
     if not os.path.exists(args["tmp"]):
         os.makedirs(args["tmp"])
 
     print("reading genome info...")
     genomes = {}
-    for r in utility.read_fasta(args["fna"]):
+    for r in utility.read_fasta(args["input"]):
         header, seq = r
         genome = Genome()
         genome.id = header.split()[0]
@@ -308,7 +296,7 @@ def main():
     print("calling genes with prodigal...")
     args["faa"] = os.path.join(args["tmp"], "proteins.faa")
     if args["restart"] or not os.path.exists(args["faa"]):
-        utility.call_genes(args["fna"], args["out"], args["threads"])
+        utility.call_genes(args["input"], args["output"], args["threads"])
 
     print("reading gene info...")  # assumes PRODIGAL V2.6.3 FORMAT
     genes = {}
@@ -327,7 +315,7 @@ def main():
     print("running hmmer search...")
     args["hmmout"] = os.path.join(args["tmp"], "hmmsearch.txt")
     if args["restart"] or not os.path.exists(args["hmmout"]):
-        utility.search_hmms(args["out"], args["threads"], args["db"])
+        utility.search_hmms(args["output"], args["threads"], args["db"])
 
     print("annotating genes...")
     annotate_genes(genomes, genes, args)
@@ -337,7 +325,7 @@ def main():
         genome.regions = define_regions(genome, genes, min_fract=1.0, max_genes=35)
 
     print("writing results...")
-    out = open(args["out"] + "/contamination.tsv", "w")
+    out = open(args["output"] + "/contamination.tsv", "w")
     header = ["genome_id", "total_length", "viral_length", "host_length"]
     header += ["total_genes", "viral_genes", "host_genes"]
     header += ["region_types", "region_lengths", "region_sizes", "region_count"]
@@ -357,10 +345,10 @@ def main():
     print("done!")
 
 
-# 	out = open(args['out']+'/gene_info.tsv', 'w')
-# 	header = ['genome_id', 'gene_types']
-# 	out.write('\t'.join(header)+'\n')
-# 	for genome in genomes.values():
-# 		my_genes = [genes[_] for _ in genome.genes]
-# 		cats = ','.join([str(g.cat) for g in my_genes])
-# 		out.write(genome.id+'\t'+cats+'\n')
+# out = open(args['out']+'/gene_info.tsv', 'w')
+# header = ['genome_id', 'gene_types']
+# out.write('\t'.join(header)+'\n')
+# for genome in genomes.values():
+#     my_genes = [genes[_] for _ in genome.genes]
+#     cats = ','.join([str(g.cat) for g in my_genes])
+#     out.write(genome.id+'\t'+cats+'\n')

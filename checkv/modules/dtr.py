@@ -34,54 +34,49 @@ class Gene:
         self.alns = []
 
 
-def parse_arguments():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawTextHelpFormatter, usage=argparse.SUPPRESS
-    )
-    parser.add_argument("program", help=argparse.SUPPRESS)
+def fetch_arguments(parser):
+    parser.set_defaults(func=main)
+    parser.set_defaults(program="circularity")
     parser.add_argument(
-        "-i",
-        dest="in",
+        "input",
         type=str,
-        required=True,
-        metavar="PATH",
-        help="""Input viral sequences in FASTA format""",
+        help="Input viral sequences in FASTA format",
     )
     parser.add_argument(
-        "-o", dest="out", type=str, required=True, metavar="PATH", help="""Output path"""
+        "output",
+        type=str,
+        help="Output directory"
     )
     parser.add_argument(
         "--min_len",
         type=int,
         default=2000,
         metavar="INT",
-        help="""Min contig length (2000)""",
+        help="Min contig length",
     )
     parser.add_argument(
         "--min_dtr",
         type=int,
         default=20,
         metavar="INT",
-        help="""Min length of DTRs (20)""",
+        help="Min length of direct terminal repeats (DTRs)",
     )
     parser.add_argument(
         "--max_lc",
         type=float,
         default=20.0,
         metavar="FLOAT",
-        help="""Max %% of DTR classified as low complexity (20.0)""",
+        help="Max %% of direct terminal repeats (DTRs) classified as low complexity",
     )
     parser.add_argument(
         "--keep_rep",
         action="store_true",
         default=False,
-        help="""Keep DTRs that occur more than 2x per sequence""",
+        help="Keep direct terminal repeats (DTRs) that occur more than 2x per sequence",
     )
-    return vars(parser.parse_args())
 
 
 def fetch_dtr(seq, min_length=20):
-
     # see if minimal substring occurs in 2nd half of seq
     substring = seq[0:min_length]
     pos = seq.rfind(substring)
@@ -96,19 +91,17 @@ def fetch_dtr(seq, min_length=20):
     return ""
 
 
-def main():
-
-    program_start = time.time()
-    args = parse_arguments()
-    args["tmp"] = os.path.join(args["out"], "tmp")
-    if not os.path.exists(args["out"]):
-        os.makedirs(args["out"])
+def main(args):
+    utility.check_executables(["dustmasker"])
+    args["tmp"] = os.path.join(args["output"], "tmp")
+    if not os.path.exists(args["output"]):
+        os.makedirs(args["output"])
     if not os.path.exists(args["tmp"]):
         os.makedirs(args["tmp"])
 
     print("read input sequences...")
     genomes = {}
-    for index, r in enumerate(Bio.SeqIO.parse(args["in"], "fasta")):
+    for index, r in enumerate(Bio.SeqIO.parse(args["input"], "fasta")):
         genome = Genome()
         genome.num = str(index)
         genome.id = r.id
@@ -149,7 +142,7 @@ def main():
         "dtr_dust",
         "is_complete",
     ]
-    out = open(args["out"] + "/circularity.tsv", "w")
+    out = open(args["output"] + "/circularity.tsv", "w")
     out.write("\t".join(header) + "\n")
     for genome_num in sorted(genomes.keys()):
         genome = genomes[genome_num]
@@ -172,5 +165,4 @@ def main():
             is_complete,
         ]
         out.write("\t".join([str(_) for _ in row]) + "\n")
-
     print("done!")

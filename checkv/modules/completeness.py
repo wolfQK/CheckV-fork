@@ -23,26 +23,18 @@ class Gene:
         pass
 
 
-def parse_arguments():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawTextHelpFormatter, usage=argparse.SUPPRESS
-    )
-    parser.add_argument("program", help=argparse.SUPPRESS)
+def fetch_arguments(parser):
+    parser.set_defaults(func=main)
+    parser.set_defaults(program="completeness")
     parser.add_argument(
-        "-i",
-        dest="fna",
+        "input",
         type=str,
-        required=True,
-        metavar="PATH",
-        help="""Input nucleotide sequences in FASTA format""",
+        help="Input nucleotide sequences in FASTA format",
     )
     parser.add_argument(
-        "-o",
-        dest="out",
+        "output",
         type=str,
-        required=True,
-        metavar="PATH",
-        help="""Output directory""",
+        help="Output directory"
     )
     parser.add_argument(
         "-d",
@@ -50,7 +42,7 @@ def parse_arguments():
         type=str,
         required=False,
         metavar="PATH",
-        help="""Reference database path; by default CHECKDB environmental variable used""",
+        help="Reference database path. By default the CHECKVDB environment variable is used",
     )
     parser.add_argument(
         "-t",
@@ -58,13 +50,13 @@ def parse_arguments():
         type=int,
         default=1,
         metavar="INT",
-        help="""Number of threads to use for DIAMOND (1)""",
+        help="Number of threads to use for Prodigal and DIAMOND",
     )
     parser.add_argument(
         "--restart",
         action="store_true",
         default=False,
-        help="""Restart program from start overwriting existing files""",
+        help="Overwrite existing intermediate files. By default CheckV continues where program left off",
     )
     parser.add_argument(
         "--percent_of_top_hit",
@@ -74,13 +66,18 @@ def parse_arguments():
         help=argparse.SUPPRESS,
     )
     parser.add_argument(
-        "--exclude_identical", action="store_true", default=False, help=argparse.SUPPRESS
+        "--exclude_identical",
+        action="store_true",
+        default=False,
+        help=argparse.SUPPRESS
     )
     parser.add_argument(
-        "--exclude_list", type=str, default=None, metavar="PATH", help=argparse.SUPPRESS
+        "--exclude_list",
+        type=str,
+        default=None,
+        metavar="PATH",
+        help=argparse.SUPPRESS
     )
-
-    return vars(parser.parse_args())
 
 
 def yield_query_alns(path):
@@ -97,8 +94,9 @@ def yield_query_alns(path):
 
 
 def take_closest(myList, myNumber):
-    """ Assumes myList is sorted. Returns closest value to myNumber.
-    	If two numbers are equally close, return the smallest number.
+    """
+    Assumes myList is sorted. Returns closest value to myNumber.
+    If two numbers are equally close, return the smallest number.
     """
     myNumber = float(myNumber)
     pos = bisect.bisect_left(myList, float(myNumber))
@@ -116,12 +114,11 @@ def take_closest(myList, myNumber):
 
 def compute_aai(blastp_path, out_path, genomes, refs):
     """ Compute AAI to reference genomes
-	1. loop over alignment blocks from <blastp_path> (1 per query)
-	2. compute average aa identity to each reference genome
-	3. write all hits to disk
-	"""
+    1. loop over alignment blocks from <blastp_path> (1 per query)
+    2. compute average aa identity to each reference genome
+    3. write all hits to disk
+    """
     with open(out_path, "w") as out:
-
         header = [
             "query",
             "target",
@@ -183,21 +180,19 @@ def compute_aai(blastp_path, out_path, genomes, refs):
                 out.write("\t".join([str(_) for _ in row]) + "\n")
 
 
-def main():
-
-    program_start = time.time()
-    args = parse_arguments()
+def main(args):
+    utility.check_executables(["prodigal", "diamond"])
     args["db"] = utility.check_database(args["db"])
-    args["tmp"] = os.path.join(args["out"], "tmp")
-    if not os.path.exists(args["out"]):
-        os.makedirs(args["out"])
+    args["tmp"] = os.path.join(args["output"], "tmp")
+    if not os.path.exists(args["output"]):
+        os.makedirs(args["output"])
     if not os.path.exists(args["tmp"]):
         os.makedirs(args["tmp"])
 
     print("calling genes with prodigal...")
     args["faa"] = os.path.join(args["tmp"], "proteins.faa")
     if args["restart"] or not os.path.exists(args["faa"]):
-        utility.call_genes(args["fna"], args["out"], args["threads"])
+        utility.call_genes(args["input"], args["output"], args["threads"])
 
     print("running diamond blastp search...")
     args["blastp"] = os.path.join(args["tmp"], "diamond.tsv")
@@ -206,7 +201,7 @@ def main():
 
     print("initializing queries and database...")
     genomes = {}
-    for header, seq in utility.read_fasta(args["fna"]):
+    for header, seq in utility.read_fasta(args["input"]):
         genome = Genome()
         genome.id = header.split()[0]
         genome.length = len(seq)
@@ -284,7 +279,7 @@ def main():
 
     print("estimating completeness...")
     module_start = time.time()
-    p = os.path.join(args["out"], "completeness.tsv")
+    p = os.path.join(args["output"], "completeness.tsv")
     with open(p, "w") as out:
         header = [
             "genome_id",

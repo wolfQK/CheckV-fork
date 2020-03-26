@@ -10,6 +10,23 @@ import time
 from Bio import SeqIO
 
 
+def check_executables(requirements):
+    fails = 0
+    for program in requirements:
+        found = False
+        for path in os.environ["PATH"].split(os.pathsep):
+            exe_file = os.path.join(path.strip('"'), program)
+            if os.path.isfile(exe_file) and os.access(exe_file, os.X_OK):
+                found = True
+                break
+        if not found:
+            msg = f"Error: required program '{program}' not executable or not found on $PATH\n"
+            sys.stderr.write(msg)
+            fails += 1
+    if fails > 0:
+        sys.exit()
+
+
 def init_worker():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
