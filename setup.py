@@ -11,6 +11,7 @@ setup(
     install_requires=[
         "biopython",
         "numpy",
+        "psutil",
     ],
     python_requires=">=3.6",
     entry_points={"console_scripts": ["checkv=checkv.cli:cli"]},

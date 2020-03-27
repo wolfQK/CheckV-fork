@@ -8,6 +8,7 @@ import subprocess as sp
 import sys
 import time
 
+import psutil
 from Bio import SeqIO
 
 
@@ -40,6 +41,14 @@ def init_worker():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
+def killtree(pid, including_parent=True):
+    parent = psutil.Process(pid)
+    for child in parent.children(recursive=True):
+        child.kill()
+    if including_parent:
+        parent.kill()
+
+
 def parallel(function, argument_list, threads):
     """ Based on: https://gist.github.com/admackin/003dd646e5fadee8b8d6 """
     threads = len(argument_list)
@@ -55,8 +64,10 @@ def parallel(function, argument_list, threads):
                 return [r.get() for r in results]
             time.sleep(1)
     except KeyboardInterrupt:
-        pool.terminate()
-        pool.join()
+        # when you want to kill everything, including this program
+        # https://www.reddit.com/r/learnpython/comments/7vwyez/how_to_kill_child_processes_when_using/dtw3oh4/
+        pid=os.getpid()
+        killtree(pid)
         sys.exit("\nKeyboardInterrupt")
 
 
@@ -73,8 +84,8 @@ def check_database(dbdir):
         msg = f"Error: database dir not found '{dbdir}'"
         sys.exit(msg)
     files = ["checkv_refs.dmnd", "checkv_refs.tsv"]
-    for file in files:
-        path = os.path.join(dbdir, file)
+    for f in files:
+        path = os.path.join(dbdir, f)
         if not os.path.exists(path):
             msg = f"Error: database file not found '{path}'"
             sys.exit(msg)
@@ -83,8 +94,8 @@ def check_database(dbdir):
 
 def read_fasta(path):
     """ read fasta file and yield (header, sequence)"""
-    with open(path) as file:
-        for record in SeqIO.parse(file, "fasta"):
+    with open(path) as f:
+        for record in SeqIO.parse(f, "fasta"):
             name = record.description
             seq = str(record.seq).upper()
             yield name, seq
@@ -146,21 +157,22 @@ def search_hmms(out_dir, threads, db_dir):
         os.makedirs(tmp)
     # list faa files
     faa = [
-        file
-        for file in os.listdir(out_dir + "/tmp/proteins")
-        if file.split(".")[-1] == "faa"
+        f
+        for f in os.listdir(out_dir + "/tmp/proteins")
+        if f.split(".")[-1] == "faa"
     ]
     # run hmmer
     args_list = []
-    for file in faa:
-        out = f"{tmp}/{file.split('.')[0]}.hmmout"
-        args_list.append([out, db_dir, out_dir + "/tmp/proteins/" + file])
+    for f in faa:
+        out = f"{tmp}/{f.split('.')[0]}.hmmout"
+        args_list.append([out, db_dir, out_dir + "/tmp/proteins/" + f])
     parallel(run_hmmsearch, args_list, threads)
     # cat output
     with open(f"{tmp}.txt", "w") as f:
-        for file in os.listdir(tmp):
-            for l in open(f"{tmp}/{file}"):
-                f.write(l)
+        for f in os.listdir(tmp):
+            with open(f"{tmp}/{f}") as subf:
+                for line in subf:
+                    f.write(line)
 
 
 def call_genes(in_fna, out_dir, threads):
@@ -196,8 +208,9 @@ def call_genes(in_fna, out_dir, threads):
         for i in range(1, iteration + 1):
             # avoid trying to read empty fasta file
             if i <= threads:
-                for l in open(f"{tmp}/{i}.faa"):
-                    f.write(l)
+                with open(f"{tmp}/{i}.faa") as subf:
+                    for line in subf:
+                        f.write(line)
 
 
 def parse_blastp(path):
@@ -217,8 +230,8 @@ def parse_blastp(path):
             "score",
         ]
         formats = [str, str, float, int, int, int, int, int, int, int, float, float]
-        for l in f:
-            values = l.split()
+        for line in f:
+            values = line.split()
             yield dict([(names[i], formats[i](values[i])) for i in range(12)])
 
 
@@ -237,7 +250,7 @@ def parse_hmmsearch(path):
             "bbias",
         ]
         formats = [str, str, str, str, float, float, float, float, float, float]
-        for l in f:
-            if not l.startswith("#"):
-                values = l.split()
+        for line in f:
+            if not line.startswith("#"):
+                values = line.split()
                 yield dict([(names[i], formats[i](values[i])) for i in range(10)])
