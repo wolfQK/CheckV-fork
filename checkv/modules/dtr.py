@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import logging
 import os
 import subprocess as sp
 import time
@@ -74,6 +75,12 @@ def fetch_arguments(parser):
         default=False,
         help="Keep direct terminal repeats (DTRs) that occur more than 2x per sequence",
     )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        default=False,
+        help="Display logging messages",
+    )
 
 
 def fetch_dtr(seq, min_length=20):
@@ -82,16 +89,15 @@ def fetch_dtr(seq, min_length=20):
     pos = seq.rfind(substring)
     if pos < len(seq) / 2:
         return ""
-
     # see if substring terminal repeat
     substring = seq[pos:]
     if seq[0 : len(substring)] == substring:
         return substring
-
     return ""
 
 
 def main(args):
+    logger = utility.get_logger(args["verbose"])
     utility.check_executables(["dustmasker"])
     args["tmp"] = os.path.join(args["output"], "tmp")
     if not os.path.exists(args["output"]):
@@ -99,7 +105,7 @@ def main(args):
     if not os.path.exists(args["tmp"]):
         os.makedirs(args["tmp"])
 
-    print("read input sequences...")
+    logger.info("[1/4] Reading input sequences…")
     genomes = {}
     for index, r in enumerate(Bio.SeqIO.parse(args["input"], "fasta")):
         genome = Genome()
@@ -109,7 +115,7 @@ def main(args):
         genome.length = len(genome.seq)
         genomes[index] = genome
 
-    print("find direct terminal repeats...")
+    logger.info("[2/4] Finding direct terminal repeats…")
     for genome in genomes.values():
         dtr = DTR()
         dtr.seq = fetch_dtr(genome.seq, args["min_dtr"])
@@ -118,7 +124,7 @@ def main(args):
         dtr.dust = 0
         genome.dtr = dtr
 
-    print("check sequence complexity...")
+    logger.info("[3/4] Checking sequence complexity…")
     args["dtr_path"] = f"{args['tmp']}/dtr.fna"
     args["dustmaskerout"] = os.path.join(args["tmp"], "dustmasker.txt")
     with open(args["dtr_path"], "w") as f:
@@ -132,7 +138,7 @@ def main(args):
         num = int(num[1:])
         genome = genomes[num]
         genome.dtr.dust = int(end) - int(start) + 1
-    print("write summary...")
+    logger.info("[4/4] Writing results…")
     header = [
         "genome_num",
         "genome_id",
@@ -165,4 +171,4 @@ def main(args):
             is_complete,
         ]
         out.write("\t".join([str(_) for _ in row]) + "\n")
-    print("done!")
+    logger.info("Done!")

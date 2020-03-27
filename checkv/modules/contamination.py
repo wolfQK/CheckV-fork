@@ -2,6 +2,7 @@
 
 import argparse
 import csv
+import logging
 import os
 import subprocess as sp
 import time
@@ -54,6 +55,12 @@ def fetch_arguments(parser):
         action="store_true",
         default=False,
         help="Overwrite existing intermediate files. By default CheckV continues where program left off",
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        default=False,
+        help="Display logging messages",
     )
 
 
@@ -273,6 +280,7 @@ def define_regions(
 
 
 def main(args):
+    logger = utility.get_logger(args["verbose"])
     utility.check_executables(["prodigal", "hmmsearch"])
     args["db"] = utility.check_database(args["db"])
     args["tmp"] = os.path.join(args["output"], "tmp")
@@ -281,7 +289,7 @@ def main(args):
     if not os.path.exists(args["tmp"]):
         os.makedirs(args["tmp"])
 
-    print("reading genome info...")
+    logger.info("[1/7] Reading genome info…")
     genomes = {}
     for r in utility.read_fasta(args["input"]):
         header, seq = r
@@ -293,12 +301,12 @@ def main(args):
         genome.viral_hits = {}
         genomes[genome.id] = genome
 
-    print("calling genes with prodigal...")
+    logger.info("[2/7] Calling genes with prodigal…")
     args["faa"] = os.path.join(args["tmp"], "proteins.faa")
     if args["restart"] or not os.path.exists(args["faa"]):
         utility.call_genes(args["input"], args["output"], args["threads"])
 
-    print("reading gene info...")  # assumes PRODIGAL V2.6.3 FORMAT
+    logger.info("[3/7] Reading gene info…")  # assumes PRODIGAL V2.6.3 FORMAT
     genes = {}
     for header, seq in utility.read_fasta(args["faa"]):
         gene = Gene()
@@ -312,19 +320,19 @@ def main(args):
         genes[gene.id] = gene
         genomes[gene.genome_id].genes.append(gene.id)
 
-    print("running hmmer search...")
+    logger.info("[4/7] Running hmmersearch…")
     args["hmmout"] = os.path.join(args["tmp"], "hmmsearch.txt")
     if args["restart"] or not os.path.exists(args["hmmout"]):
         utility.search_hmms(args["output"], args["threads"], args["db"])
 
-    print("annotating genes...")
+    logger.info("[5/7] Annotating genes…")
     annotate_genes(genomes, genes, args)
 
-    print("identifying host regions...")
+    logger.info("[6/7] Identifying host regions…")
     for genome in genomes.values():
         genome.regions = define_regions(genome, genes, min_fract=1.0, max_genes=35)
 
-    print("writing results...")
+    logger.info("[7/7] Writing results…")
     out = open(args["output"] + "/contamination.tsv", "w")
     header = ["genome_id", "total_length", "viral_length", "host_length"]
     header += ["total_genes", "viral_genes", "host_genes"]
@@ -342,7 +350,7 @@ def main(args):
         row += [region_types, region_lengths, region_sizes, num_regions]
         out.write("\t".join([str(_) for _ in row]) + "\n")
 
-    print("done!")
+    logger.info("Done!")
 
 
 # out = open(args['out']+'/gene_info.tsv', 'w')

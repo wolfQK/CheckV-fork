@@ -3,6 +3,7 @@
 import argparse
 import bisect
 import csv
+import logging
 import operator
 import os
 import subprocess as sp
@@ -77,6 +78,12 @@ def fetch_arguments(parser):
         default=None,
         metavar="PATH",
         help=argparse.SUPPRESS
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        default=False,
+        help="Display logging messages",
     )
 
 
@@ -181,6 +188,7 @@ def compute_aai(blastp_path, out_path, genomes, refs):
 
 
 def main(args):
+    logger = utility.get_logger(args["verbose"])
     utility.check_executables(["prodigal", "diamond"])
     args["db"] = utility.check_database(args["db"])
     args["tmp"] = os.path.join(args["output"], "tmp")
@@ -189,17 +197,17 @@ def main(args):
     if not os.path.exists(args["tmp"]):
         os.makedirs(args["tmp"])
 
-    print("calling genes with prodigal...")
+    logger.info("[1/5] Calling genes with prodigal…")
     args["faa"] = os.path.join(args["tmp"], "proteins.faa")
     if args["restart"] or not os.path.exists(args["faa"]):
         utility.call_genes(args["input"], args["output"], args["threads"])
 
-    print("running diamond blastp search...")
+    logger.info("[2/5] Running DIAMOND blastp search…")
     args["blastp"] = os.path.join(args["tmp"], "diamond.tsv")
     if args["restart"] or not os.path.exists(args["blastp"]):
         utility.run_diamond(args["blastp"], args["db"], args["faa"], args["threads"])
 
-    print("initializing queries and database...")
+    logger.info("[3/5] Initializing queries and databas…")
     genomes = {}
     for header, seq in utility.read_fasta(args["input"]):
         genome = Genome()
@@ -247,12 +255,10 @@ def main(args):
     error_keys["aai"] = sorted(list(set([_[1] for _ in error_rates.keys()])))
     error_keys["cov"] = sorted(list(set([_[2] for _ in error_rates.keys()])))
 
-    print("computing aai...")
+    logger.info("[4/5] Computing AAI…")
     args["aai"] = os.path.join(args["tmp"], "aai.tsv")
     if args["restart"] or not os.path.exists(args["aai"]):
         compute_aai(args["blastp"], args["aai"], genomes, refs)
-
-    print("store aai...")
     for r in csv.DictReader(open(args["aai"]), delimiter="\t"):
 
         # better formatting here to floats
@@ -277,7 +283,7 @@ def main(args):
             if 100.0 * (top_score - r["score"]) / top_score <= args["percent_of_top_hit"]:
                 genomes[r["query"]].aai.append(r)
 
-    print("estimating completeness...")
+    logger.info("[5/5] Estimating completeness…")
     module_start = time.time()
     p = os.path.join(args["output"], "completeness.tsv")
     with open(p, "w") as out:
@@ -336,4 +342,4 @@ def main(args):
                 out.write("\t".join([str(_) for _ in row]) + "\n")
 
     # done!
-    print("done!")
+    logger.info("Done!")

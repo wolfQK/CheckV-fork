@@ -1,3 +1,4 @@
+import logging
 import math
 import multiprocessing as mp
 import os
@@ -8,6 +9,14 @@ import sys
 import time
 
 from Bio import SeqIO
+
+
+def get_logger(verbosity):
+    if verbosity:
+        logging.basicConfig(level=logging.INFO, format='%(message)s')
+    else:
+        logging.basicConfig(level=logging.WARNING, format='%(message)s')
+    return logging.getLogger()
 
 
 def check_executables(requirements):
