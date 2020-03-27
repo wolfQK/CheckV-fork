@@ -41,12 +41,12 @@ def init_worker():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
-def killtree(pid, including_parent=True):
+def terminate_tree(pid, including_parent=True):
     parent = psutil.Process(pid)
     for child in parent.children(recursive=True):
-        child.kill()
+        child.terminate()
     if including_parent:
-        parent.kill()
+        parent.terminate()
 
 
 def parallel(function, argument_list, threads):
@@ -67,8 +67,7 @@ def parallel(function, argument_list, threads):
         # when you want to kill everything, including this program
         # https://www.reddit.com/r/learnpython/comments/7vwyez/how_to_kill_child_processes_when_using/dtw3oh4/
         pid=os.getpid()
-        killtree(pid)
-        sys.exit("\nKeyboardInterrupt")
+        terminate_tree(pid)
 
 
 def check_database(dbdir):
