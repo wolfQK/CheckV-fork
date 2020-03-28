@@ -156,9 +156,9 @@ def search_hmms(out_dir, threads, db_dir):
         os.makedirs(tmp)
     # list faa files
     faa = [
-        f
-        for f in os.listdir(out_dir + "/tmp/proteins")
-        if f.split(".")[-1] == "faa"
+        file
+        for file in os.listdir(out_dir + "/tmp/proteins")
+        if file.split(".")[-1] == "faa"
     ]
     # run hmmer
     args_list = []
@@ -168,8 +168,8 @@ def search_hmms(out_dir, threads, db_dir):
     parallel(run_hmmsearch, args_list, threads)
     # cat output
     with open(f"{tmp}.txt", "w") as f:
-        for f in os.listdir(tmp):
-            with open(f"{tmp}/{f}") as subf:
+        for file in os.listdir(tmp):
+            with open(f"{tmp}/{file}") as subf:
                 for line in subf:
                     f.write(line)
 
