@@ -10,7 +10,7 @@ git clone bitbucket.org/snayfachlbl/checkv
 
 Install dependencies:
 ```bash
-conda install -c conda-forge -c bioconda biopython numpy psutil blast diamond hmmer prodigal
+conda install -c conda-forge -c importlib_metadata bioconda biopython numpy psutil blast diamond hmmer prodigal
 ```
 
 Download database:

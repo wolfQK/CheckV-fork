@@ -10,6 +10,7 @@ setup(
     long_description_content_type="text/markdown",
     install_requires=[
         "biopython",
+        "importlib-metadata>=0.12; python_version<'3.8'",
         "numpy",
         "psutil",
     ],
