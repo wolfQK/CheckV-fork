@@ -51,6 +51,12 @@ def fetch_arguments(parser):
         help="Number of threads to use for Prodigal and hmmsearch",
     )
     parser.add_argument(
+        "--hmm-db",
+        choices=["full", "reduced"],
+        default="reduced",
+        help="Use full (37520) or reduced HMM db (11134)",
+    )
+    parser.add_argument(
         "--restart",
         action="store_true",
         default=False,
@@ -82,12 +88,14 @@ def annotate_genes(genomes, genes, args):
     for r in csv.DictReader(open(p), delimiter="\t"):
         r["score_cutoff"] = float(r["score_cutoff"])
         hmm_info[r["hmm"]] = r
-
+	
     # 2. identify best hit at cutoffs
     for r in utility.parse_hmmsearch(args["hmmout"]):
         r["tname"] = r["tname"] if r["tname"] in hmm_info else r["tacc"]
         gene = genes[r["qname"]]
-        if r["score"] < float(hmm_info[r["tname"]]["score_cutoff"]):
+        if r["tname"] not in hmm_info:
+            continue
+        elif r["score"] < float(hmm_info[r["tname"]]["score_cutoff"]):
             continue
         elif gene.hmm_hit is None or r["score"] > gene.hmm_hit["score"]:
             gene.hmm_hit = r
@@ -280,6 +288,8 @@ def define_regions(
 
 
 def main(args):
+
+    program_start = time.time()
     logger = utility.get_logger(args["verbose"])
     utility.check_executables(["prodigal", "hmmsearch"])
     args["db"] = utility.check_database(args["db"])
@@ -320,10 +330,14 @@ def main(args):
         genes[gene.id] = gene
         genomes[gene.genome_id].genes.append(gene.id)
 
-    logger.info("[4/7] Running hmmersearch…")
+    logger.info("[4/7] Running hmmsearch…")
     args["hmmout"] = os.path.join(args["tmp"], "hmmsearch.txt")
     if args["restart"] or not os.path.exists(args["hmmout"]):
-        utility.search_hmms(args["output"], args["threads"], args["db"])
+        if args["hmm_db"] == "full":
+            db_dir = os.path.join(args["db"], "checkv_37520_hmm")
+        elif args["hmm_db"] == "reduced":
+            db_dir = os.path.join(args["db"], "checkv_11134_hmm")
+        utility.search_hmms(args["output"], args["threads"], db_dir)
 
     logger.info("[5/7] Annotating genes…")
     annotate_genes(genomes, genes, args)
@@ -350,8 +364,9 @@ def main(args):
         row += [region_types, region_lengths, region_sizes, num_regions]
         out.write("\t".join([str(_) for _ in row]) + "\n")
 
-    logger.info("Done!")
-
+    logger.info("\nDone!")
+    logger.info("Run time: %s seconds" % round(time.time()-program_start,2))
+    logger.info("Peak mem: %s GB" % round(utility.max_mem_usage(),2))
 
 # out = open(args['out']+'/gene_info.tsv', 'w')
 # header = ['genome_id', 'gene_types']

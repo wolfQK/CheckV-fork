@@ -97,6 +97,8 @@ def fetch_dtr(seq, min_length=20):
 
 
 def main(args):
+
+    program_start = time.time()
     logger = utility.get_logger(args["verbose"])
     utility.check_executables(["dustmasker"])
     args["tmp"] = os.path.join(args["output"], "tmp")
@@ -171,4 +173,8 @@ def main(args):
             is_complete,
         ]
         out.write("\t".join([str(_) for _ in row]) + "\n")
-    logger.info("Done!")
+
+    logger.info("\nDone!")
+    logger.info("Run time: %s seconds" % round(time.time()-program_start,2))
+    logger.info("Peak mem: %s GB" % round(utility.max_mem_usage(),2))
+

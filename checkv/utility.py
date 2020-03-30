@@ -7,9 +7,20 @@ import signal
 import subprocess as sp
 import sys
 import time
-
 import psutil
 from Bio import SeqIO
+import resource
+import platform
+
+
+def max_mem_usage():
+    """ Return max mem usage (Gb) of self and child processes """
+    max_mem_self = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    max_mem_child = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
+    if platform.system() == 'Linux':
+        return (max_mem_self + max_mem_child)/float(1e6)
+    else:
+        return (max_mem_self + max_mem_child)/float(1e9)
 
 
 def get_logger(verbosity):
@@ -51,7 +62,7 @@ def terminate_tree(pid, including_parent=True):
 
 def parallel(function, argument_list, threads):
     """ Based on: https://gist.github.com/admackin/003dd646e5fadee8b8d6 """
-    threads = len(argument_list)
+    #threads = len(argument_list) ## why is this being defined again here?
     pool = mp.Pool(threads, init_worker)
     try:
         results = []
@@ -136,14 +147,14 @@ def run_diamond(out, db, faa, threads):
     p.wait()
 
 
-def run_hmmsearch(out, db, faa, evalue=10, threads=1):
+def run_hmmsearch(out, db, faa, threads=1, evalue=10):
     cmd = "hmmsearch "
     cmd += "--noali "
     cmd += "-o /dev/null "
     cmd += f"-E {evalue} "
     cmd += f"--tblout {out} "
     cmd += f"--cpu {threads} "
-    cmd += f"{db}/checkv_hmms.hmm "
+    cmd += f"{db} "
     cmd += f"{faa} "
     p = sp.Popen(cmd, shell=True)
     p.wait()
@@ -162,9 +173,9 @@ def search_hmms(out_dir, threads, db_dir):
     ]
     # run hmmer
     args_list = []
-    for f in faa:
+    for f in os.listdir(db_dir):
         out = f"{tmp}/{f.split('.')[0]}.hmmout"
-        args_list.append([out, db_dir, out_dir + "/tmp/proteins/" + f])
+        args_list.append([out, db_dir+"/"+f, out_dir + "/tmp/proteins.faa"])
     parallel(run_hmmsearch, args_list, threads)
     # cat output
     with open(f"{tmp}.txt", "w") as f:
@@ -173,28 +184,27 @@ def search_hmms(out_dir, threads, db_dir):
                 for line in subf:
                     f.write(line)
 
-
 def call_genes(in_fna, out_dir, threads):
-    # make tmp
+    # make tmp dir
     tmp = f"{out_dir}/tmp/proteins"
     if not os.path.exists(tmp):
         os.makedirs(tmp)
-    # count seqs
+    # count seqs in fasta
     num_seqs = sum(1 for _ in read_fasta(in_fna))
-    # split fna
+    # split fna into equal sized chunks
     split_size = int(math.ceil(1.0 * num_seqs / threads))
     iteration = 1
     count = 0
     out = open(f"{tmp}/{iteration}.fna", "w")
     for id, seq in read_fasta(in_fna):
-        out.write(">" + id + "\n" + seq + "\n")
-        count += 1
+        # check if new file should be opened
         if count == split_size:
             count = 0
             iteration += 1
-            # avoid creating empty fasta file
-            if iteration <= threads:
-                out = open(f"{tmp}/{iteration}.fna", "w")
+            out = open(f"{tmp}/{iteration}.fna", "w")
+        # write seq to file
+        out.write(">" + id + "\n" + seq + "\n")
+        count += 1
     out.close()
     # call genes
     args_list = []
@@ -253,3 +263,4 @@ def parse_hmmsearch(path):
             if not line.startswith("#"):
                 values = line.split()
                 yield dict([(names[i], formats[i](values[i])) for i in range(10)])
+

@@ -188,6 +188,8 @@ def compute_aai(blastp_path, out_path, genomes, refs):
 
 
 def main(args):
+
+    program_start = time.time()
     logger = utility.get_logger(args["verbose"])
     utility.check_executables(["prodigal", "diamond"])
     args["db"] = utility.check_database(args["db"])
@@ -342,4 +344,7 @@ def main(args):
                 out.write("\t".join([str(_) for _ in row]) + "\n")
 
     # done!
-    logger.info("Done!")
+    logger.info("\nDone!")
+    logger.info("Run time: %s seconds" % round(time.time()-program_start,2))
+    logger.info("Peak mem: %s GB" % round(utility.max_mem_usage(),2))
+
