@@ -74,7 +74,7 @@ def compute_gc(x):
     return 100.0 * (x.count("G") + x.count("C")) / len(x)
 
 
-def annotate_genes(genomes, genes, args):
+def annotate_genes(hmm_info, genomes, genes, args):
     """
     1. read hmm bitscore cutoffs for viral/microbial annotation
     2. assign genes to hmms according to their best hit using cutoffs from (1)
@@ -82,14 +82,7 @@ def annotate_genes(genomes, genes, args):
     4. Summarize the number of viral and microbial annotations per genome
     """
 
-    # 1. read cutoffs
-    hmm_info = {}
-    p = f"{args['db']}/checkv_hmms.tsv"
-    for r in csv.DictReader(open(p), delimiter="\t"):
-        r["score_cutoff"] = float(r["score_cutoff"])
-        hmm_info[r["hmm"]] = r
-	
-    # 2. identify best hit at cutoffs
+    # 1. identify best hit at cutoffs
     for r in utility.parse_hmmsearch(args["hmmout"]):
         r["tname"] = r["tname"] if r["tname"] in hmm_info else r["tacc"]
         gene = genes[r["qname"]]
@@ -100,7 +93,7 @@ def annotate_genes(genomes, genes, args):
         elif gene.hmm_hit is None or r["score"] > gene.hmm_hit["score"]:
             gene.hmm_hit = r
 
-    # 3. annotate genes based on best hit at selected cutoff
+    # 2. annotate genes based on best hit at selected cutoff
     to_cat = {"viral": 1, "microbial": -1}
     for genome in genomes.values():
         for gene_id in genome.genes:
@@ -109,7 +102,7 @@ def annotate_genes(genomes, genes, args):
                 hmm_type = hmm_info[hmm_hit["tname"]]["category"]
                 genes[gene_id].cat = to_cat[hmm_type]
 
-    # 4. summarize hits
+    # 3. summarize hits
     for genome in genomes.values():
         genome.count_viral = sum(1 for _ in genome.genes if genes[_].cat == 1)
         genome.count_host = sum(1 for _ in genome.genes if genes[_].cat == -1)
@@ -299,7 +292,14 @@ def main(args):
     if not os.path.exists(args["tmp"]):
         os.makedirs(args["tmp"])
 
-    logger.info("[1/7] Reading genome info…")
+    logger.info("[1/8] Reading database info…")
+    hmm_info = {}
+    p = os.path.join(args["db"], "checkv_hmms.tsv")
+    for r in csv.DictReader(open(p), delimiter="\t"):
+        r["score_cutoff"] = float(r["score_cutoff"])
+        hmm_info[r["hmm"]] = r
+
+    logger.info("[2/8] Reading genome info…")
     genomes = {}
     for r in utility.read_fasta(args["input"]):
         header, seq = r
@@ -311,18 +311,19 @@ def main(args):
         genome.viral_hits = {}
         genomes[genome.id] = genome
 
-    logger.info("[2/7] Calling genes with prodigal…")
+    logger.info("[3/8] Calling genes with prodigal…")
     args["faa"] = os.path.join(args["tmp"], "proteins.faa")
     if args["restart"] or not os.path.exists(args["faa"]):
         utility.call_genes(args["input"], args["output"], args["threads"])
 
-    logger.info("[3/7] Reading gene info…")  # assumes PRODIGAL V2.6.3 FORMAT
+    logger.info("[4/8] Reading gene info…")  # assumes PRODIGAL V2.6.3 FORMAT
     genes = {}
     for header, seq in utility.read_fasta(args["faa"]):
         gene = Gene()
         gene.id = header.split()[0]
         gene.start = int(header.split()[2])
         gene.end = int(header.split()[4])
+        gene.strand = int(header.split()[6])
         gene.genome_id = gene.id.rsplit("_", 1)[0]
         gene.gc = compute_gc(genomes[gene.genome_id].seq[gene.start - 1 : gene.end])
         gene.cat = 0
@@ -330,7 +331,7 @@ def main(args):
         genes[gene.id] = gene
         genomes[gene.genome_id].genes.append(gene.id)
 
-    logger.info("[4/7] Running hmmsearch…")
+    logger.info("[5/8] Running hmmsearch…")
     args["hmmout"] = os.path.join(args["tmp"], "hmmsearch.txt")
     if args["restart"] or not os.path.exists(args["hmmout"]):
         if args["hmm_db"] == "full":
@@ -339,39 +340,60 @@ def main(args):
             db_dir = os.path.join(args["db"], "checkv_11134_hmm")
         utility.search_hmms(args["output"], args["threads"], db_dir)
 
-    logger.info("[5/7] Annotating genes…")
-    annotate_genes(genomes, genes, args)
+    logger.info("[6/8] Annotating genes…")
+    annotate_genes(hmm_info, genomes, genes, args)
 
-    logger.info("[6/7] Identifying host regions…")
+    logger.info("[7/8] Identifying host regions…")
     for genome in genomes.values():
         genome.regions = define_regions(genome, genes, min_fract=1.0, max_genes=35)
 
-    logger.info("[7/7] Writing results…")
+    logger.info("[8/8] Writing results…")
     out = open(args["output"] + "/contamination.tsv", "w")
     header = ["genome_id", "total_length", "viral_length", "host_length"]
     header += ["total_genes", "viral_genes", "host_genes"]
-    header += ["region_types", "region_lengths", "region_sizes", "region_count"]
+    header += ["region_types", "region_lengths", "region_coords", "region_genes"]
     out.write("\t".join(header) + "\n")
     for genome in genomes.values():
         viral_length = sum(r["length"] for r in genome.regions if r["type"] == "viral")
         host_length = sum(r["length"] for r in genome.regions if r["type"] == "host")
-        num_regions = len(genome.regions)
         region_types = ",".join([r["type"] for r in genome.regions])
         region_lengths = ",".join([str(r["length"]) for r in genome.regions])
-        region_sizes = ",".join([str(r["size"]) for r in genome.regions])
+        region_coords = ",".join([str(r["start_pos"])+"-"+str(r["end_pos"]) for r in genome.regions])
+        region_genes = ",".join([str(r["start_gene"]+1)+"-"+str(r["end_gene"]) for r in genome.regions])
         row = [genome.id, genome.length, viral_length, host_length]
         row += [len(genome.genes), genome.count_viral, genome.count_host]
-        row += [region_types, region_lengths, region_sizes, num_regions]
+        row += [region_types, region_lengths, region_coords, region_genes]
         out.write("\t".join([str(_) for _ in row]) + "\n")
+
+    with open(args["tmp"]+"/gene_features.tsv", "w") as out:
+        header = ["genome_id", "gene_num", "start", "end", "strand", "hmm_cat", "gc"]
+        out.write("\t".join(header)+"\n")
+        for genome in genomes.values():
+            for gene_id in genome.genes:
+                gene = genes[gene_id]
+                num = gene_id.split("_")[-1]
+                row = [genome.id, num, gene.start, gene.end, gene.strand, gene.cat, round(gene.gc,1)]
+                out.write("\t".join([str(_) for _ in row])+"\n")
+
+    with open(args["tmp"]+"/gene_annotations.tsv", "w") as out:
+        header = ["genome_id", "gene_num", "target_hmm", "hmm_db", "hmm_cat", "target_score", "target_evalue"]
+        out.write("\t".join(header)+"\n")
+        for genome in genomes.values():
+            for gene_id in genome.genes:
+                gene = genes[gene_id]
+                if gene.hmm_hit:
+                    num = gene_id.split("_")[-1]
+                    hmm = gene.hmm_hit["tname"]
+                    db = hmm_info[hmm]["database"]
+                    cat = hmm_info[hmm]["category"]
+                    score = gene.hmm_hit["score"]
+                    eval = gene.hmm_hit["eval"]
+                    row = [genome.id, num, hmm, db, cat, score, eval]
+                    out.write("\t".join([str(_) for _ in row])+"\n")
 
     logger.info("\nDone!")
     logger.info("Run time: %s seconds" % round(time.time()-program_start,2))
     logger.info("Peak mem: %s GB" % round(utility.max_mem_usage(),2))
 
-# out = open(args['out']+'/gene_info.tsv', 'w')
-# header = ['genome_id', 'gene_types']
-# out.write('\t'.join(header)+'\n')
-# for genome in genomes.values():
-#     my_genes = [genes[_] for _ in genome.genes]
-#     cats = ','.join([str(g.cat) for g in my_genes])
-#     out.write(genome.id+'\t'+cats+'\n')
+
+
