@@ -311,10 +311,12 @@ def main(args):
         genome.viral_hits = {}
         genomes[genome.id] = genome
 
-    logger.info("[3/8] Calling genes with prodigal…")
     args["faa"] = os.path.join(args["tmp"], "proteins.faa")
     if args["restart"] or not os.path.exists(args["faa"]):
+        logger.info("[3/8] Calling genes with prodigal…")
         utility.call_genes(args["input"], args["output"], args["threads"])
+    else:
+        logger.info("[3/8] Skipping gene calling…")
 
     logger.info("[4/8] Reading gene info…")  # assumes PRODIGAL V2.6.3 FORMAT
     genes = {}
@@ -331,14 +333,16 @@ def main(args):
         genes[gene.id] = gene
         genomes[gene.genome_id].genes.append(gene.id)
 
-    logger.info("[5/8] Running hmmsearch…")
     args["hmmout"] = os.path.join(args["tmp"], "hmmsearch.txt")
     if args["restart"] or not os.path.exists(args["hmmout"]):
         if args["hmm_db"] == "full":
             db_dir = os.path.join(args["db"], "checkv_37520_hmm")
         elif args["hmm_db"] == "reduced":
             db_dir = os.path.join(args["db"], "checkv_11134_hmm")
+        logger.info("[5/8] Running hmmsearch…")
         utility.search_hmms(args["output"], args["threads"], db_dir)
+    else:
+        logger.info("[5/8] Skipping hmmsearch…")
 
     logger.info("[6/8] Annotating genes…")
     annotate_genes(hmm_info, genomes, genes, args)
