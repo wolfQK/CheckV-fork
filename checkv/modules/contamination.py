@@ -54,7 +54,7 @@ def fetch_arguments(parser):
         "--hmm-db",
         choices=["full", "reduced"],
         default="reduced",
-        help="Use full (37520) or reduced HMM db (11134)",
+        help="Use the full (37,520 profiles) or the reduced (11,134 profiles) HMM database",
     )
     parser.add_argument(
         "--restart",
