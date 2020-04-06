@@ -244,7 +244,7 @@ def main(args):
 
     # exclude references
     exclude = set([])
-    for l in open(args["db"] + "/exclude_genomes.list"):
+    for l in open(os.path.join(args["db"], "exclude_genomes.list")):
         exclude.add(l.rstrip())
     if args["exclude_list"]:
         for l in open(args["exclude_list"]):

@@ -162,27 +162,29 @@ def run_hmmsearch(out, db, faa, threads=1, evalue=10):
 
 def search_hmms(out_dir, threads, db_dir):
     # make tmp
-    tmp = f"{out_dir}/tmp/hmmsearch"
+    tmp = os.path.join(out_dir, "tmp", "hmmsearch")
     if not os.path.exists(tmp):
         os.makedirs(tmp)
     # list faa files
     faa = [
         file
-        for file in os.listdir(out_dir + "/tmp/proteins")
+        for file in os.listdir(os.path.join(out_dir, "tmp", "proteins"))
         if file.split(".")[-1] == "faa"
     ]
     # run hmmer
     args_list = []
     for f in os.listdir(db_dir):
-        out = f"{tmp}/{f.split('.')[0]}.hmmout"
-        args_list.append([out, db_dir+"/"+f, out_dir + "/tmp/proteins.faa"])
+        out = os.path.join(tmp, f"{f.split('.')[0]}.hmmout")
+        args_list.append(
+            [out, os.path.join(db_dir, f), os.path.join(out_dir, "tmp", "proteins.faa")]
+        )
     parallel(run_hmmsearch, args_list, threads)
     # cat output
-    with open(f"{tmp}.txt", "w") as f:
-        for file in os.listdir(tmp):
-            with open(f"{tmp}/{file}") as subf:
+    with open(f"{tmp}.txt", "w") as fout:
+        for f in os.listdir(tmp):
+            with open(os.path.join(tmp, f)) as subf:
                 for line in subf:
-                    f.write(line)
+                    fout.write(line)
 
 def call_genes(in_fna, out_dir, threads):
     # make tmp dir
@@ -195,13 +197,13 @@ def call_genes(in_fna, out_dir, threads):
     split_size = int(math.ceil(1.0 * num_seqs / threads))
     iteration = 1
     count = 0
-    out = open(f"{tmp}/{iteration}.fna", "w")
+    out = open(os.path.join(tmp, f"{iteration}.fna"), "w")
     for id, seq in read_fasta(in_fna):
         # check if new file should be opened
         if count == split_size:
             count = 0
             iteration += 1
-            out = open(f"{tmp}/{iteration}.fna", "w")
+            out = open(os.path.join(tmp, f"{iteration}.fna"), "w")
         # write seq to file
         out.write(">" + id + "\n" + seq + "\n")
         count += 1
@@ -209,7 +211,7 @@ def call_genes(in_fna, out_dir, threads):
     # call genes
     args_list = []
     for i in range(1, threads + 1):
-        out = f"{tmp}/{i}"
+        out = os.path.join(tmp, i)
         args_list.append([out])
     parallel(run_prodigal, args_list, threads)
     # cat output
@@ -217,7 +219,7 @@ def call_genes(in_fna, out_dir, threads):
         for i in range(1, iteration + 1):
             # avoid trying to read empty fasta file
             if i <= threads:
-                with open(f"{tmp}/{i}.faa") as subf:
+                with open(os.path.join(tmp, f"{i}.faa")) as subf:
                     for line in subf:
                         f.write(line)
 

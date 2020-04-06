@@ -352,7 +352,7 @@ def main(args):
         genome.regions = define_regions(genome, genes, min_fract=1.0, max_genes=35)
 
     logger.info("[8/8] Writing results…")
-    out = open(args["output"] + "/contamination.tsv", "w")
+    out = open(os.path.join(args["output"], "contamination.tsv"), "w")
     header = ["genome_id", "total_length", "viral_length", "host_length"]
     header += ["total_genes", "viral_genes", "host_genes"]
     header += ["region_types", "region_lengths", "region_coords", "region_genes"]
@@ -369,7 +369,7 @@ def main(args):
         row += [region_types, region_lengths, region_coords, region_genes]
         out.write("\t".join([str(_) for _ in row]) + "\n")
 
-    with open(args["tmp"]+"/gene_features.tsv", "w") as out:
+    with open(os.path.join(args["tmp"], "gene_features.tsv"), "w") as out:
         header = ["genome_id", "gene_num", "start", "end", "strand", "hmm_cat", "gc"]
         out.write("\t".join(header)+"\n")
         for genome in genomes.values():
@@ -379,7 +379,7 @@ def main(args):
                 row = [genome.id, num, gene.start, gene.end, gene.strand, gene.cat, round(gene.gc,1)]
                 out.write("\t".join([str(_) for _ in row])+"\n")
 
-    with open(args["tmp"]+"/gene_annotations.tsv", "w") as out:
+    with open(os.path.join(args["tmp"], "gene_annotations.tsv"), "w") as out:
         header = ["genome_id", "gene_num", "target_hmm", "hmm_db", "hmm_cat", "target_score", "target_evalue"]
         out.write("\t".join(header)+"\n")
         for genome in genomes.values():

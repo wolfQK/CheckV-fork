@@ -150,7 +150,7 @@ def main(args):
         "dtr_dust",
         "is_complete",
     ]
-    out = open(args["output"] + "/circularity.tsv", "w")
+    out = open(os.path.join(args["output"], "circularity.tsv"), "w")
     out.write("\t".join(header) + "\n")
     for genome_num in sorted(genomes.keys()):
         genome = genomes[genome_num]
