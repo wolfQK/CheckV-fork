@@ -66,10 +66,10 @@ def fetch_arguments(parser):
         help="Longest low complexity region per TR, as %% of TR length",
     )
     parser.add_argument(
-        "--verbose",
+        "--quiet",
         action="store_true",
         default=False,
-        help="Display logging messages",
+        help="Suppress logging messages",
     )
 
 
@@ -110,7 +110,7 @@ def fetch_itr(seq, min_len=20, max_len=1000):
 def main(args):
 
     program_start = time.time()
-    logger = utility.get_logger(args["verbose"])
+    logger = utility.get_logger(args["quiet"])
     utility.check_executables(["dustmasker"])
     args["tmp"] = os.path.join(args["output"], "tmp")
     if not os.path.exists(args["output"]):

@@ -22,8 +22,8 @@ def max_mem_usage():
         return (max_mem_self + max_mem_child)/float(1e9)
 
 
-def get_logger(verbosity):
-    if verbosity:
+def get_logger(quiet):
+    if not quiet:
         logging.basicConfig(level=logging.INFO, format='%(message)s')
     else:
         logging.basicConfig(level=logging.WARNING, format='%(message)s')

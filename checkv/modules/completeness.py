@@ -93,10 +93,10 @@ def fetch_arguments(parser):
         help=argparse.SUPPRESS
     )
     parser.add_argument(
-        "--verbose",
+        "--quiet",
         action="store_true",
         default=False,
-        help="Display logging messages",
+        help="Suppress logging messages",
     )
 
 
@@ -203,7 +203,7 @@ def compute_aai(blastp_path, out_path, genomes, refs):
 def main(args):
 
     program_start = time.time()
-    logger = utility.get_logger(args["verbose"])
+    logger = utility.get_logger(args["quiet"])
     utility.check_executables(["prodigal", "diamond"])
     args["db"] = utility.check_database(args["db"])
     args["tmp"] = os.path.join(args["output"], "tmp")

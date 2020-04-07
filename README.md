@@ -3,65 +3,58 @@ Assessing the quality of viral genomes from metagenomes & viromes
 
 ## Installation
 
-Clone repository:
+Download repository:  
 ```bash
 git clone bitbucket.org/berkeleylab/checkv
 ```
 
-Install dependencies:
+Install dependencies:  
 ```bash
 conda install -c conda-forge -c importlib_metadata bioconda biopython numpy psutil blast diamond hmmer prodigal
 ```
 
-Install CheckV:
+Install CheckV:  
 ```bash
 cd /path/to/checkv
 python setup.py develop
 ```
 
-Download database:
+Download database:  
 ```bash
-wget https://www.dropbox.com/s/s2pymkcdyujp47g/checkv-db-v0.1.tar.gz
+wget https://www.dropbox.com/s/ysv382w01ee7y3t/checkv-db-v0.2.tar.gz
 tar -zxvf checkv-db-v0.1.tar.gz
 ```
 
-Setup environment:
+Setup environment:  
 ```bash
 export CHECKVDB=/path/to/checkv-db-v0.1
 ```
 
 ## Quick start
 
-Navigate to CheckV test directory:
+Navigate to CheckV test directory:  
 ```bash
 cd /path/to/checkv/test
 ```
 
-Identify circular genomes:
+Estimate host contamination on integrated prophages:
 ```bash
-checkv circularity test.fna checkv_out --verbose
+checkv contamination test.fna checkv_out -t 16
 ```
 
 Estimate completeness for genome fragments:
 ```bash
-checkv completeness test.fna checkv_out -t 16 --verbose
+checkv completeness test.fna checkv_out -t 16
 ```
 
-Estimate contamination for integrated prophages:
-
-* using full database (slower, more sensitive):
+Identify (possible) complete genomes with terminal repeats:
 ```bash
-checkv contamination test.fna checkv_out -t 16 --hmm-db full --verbose
+checkv terminal_repeats test.fna checkv_out
 ```
 
-* or using reduced database (faster, less sensitive):
+Summarize CheckV output & classify contigs into quality tiers:
 ```bash
-checkv contamination test.fna checkv_out -t 16 --hmm-db reduced --verbose
-```
-
-Generate final output (**not ready**):
-```bash
-checkv summary checkv_out
+checkv quality_summary test.fna checkv_out
 ```
 
 

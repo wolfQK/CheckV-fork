@@ -30,17 +30,17 @@ def fetch_arguments(parser):
         help="Output directory"
     )
     parser.add_argument(
-        "--verbose",
+        "--quiet",
         action="store_true",
         default=False,
-        help="Display logging messages",
+        help="Suppress logging messages",
     )
 
 
 def main(args):
 
     program_start = time.time()
-    logger = utility.get_logger(args["verbose"])
+    logger = utility.get_logger(args["quiet"])
     args["tmp"] = os.path.join(args["output"], "tmp")
     if not os.path.exists(args["output"]):
         os.makedirs(args["output"])

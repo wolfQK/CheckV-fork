@@ -58,10 +58,10 @@ def fetch_arguments(parser):
         help="Overwrite existing intermediate files. By default CheckV continues where program left off",
     )
     parser.add_argument(
-        "--verbose",
+        "--quiet",
         action="store_true",
         default=False,
-        help="Display logging messages",
+        help="Suppress logging messages",
     )
     parser.add_argument(
         "--exclude",
@@ -284,7 +284,7 @@ def define_regions(
 def main(args):
 
     program_start = time.time()
-    logger = utility.get_logger(args["verbose"])
+    logger = utility.get_logger(args["quiet"])
     utility.check_executables(["prodigal", "hmmsearch"])
     args["db"] = utility.check_database(args["db"])
     args["tmp"] = os.path.join(args["output"], "tmp")
