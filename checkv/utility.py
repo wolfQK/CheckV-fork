@@ -12,7 +12,6 @@ from Bio import SeqIO
 import resource
 import platform
 
-
 def max_mem_usage():
     """ Return max mem usage (Gb) of self and child processes """
     max_mem_self = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
@@ -118,15 +117,20 @@ def run_prodigal(out):
     cmd += f"-a {out}.faa "
     cmd += "1> /dev/null "
     cmd += f"2> {out}.log"
+    with open(f"{out}.cmd", "w") as file:
+        file.write(cmd+"\n")
     p = sp.Popen(cmd, shell=True)
     p.wait()
 
 
 def run_dustmasker(input, out):
     cmd = "dustmasker "
+    cmd += "-outfmt acclist "
     cmd += f"-in {input} "
     cmd += f"-out {out} "
-    cmd += "-outfmt acclist"
+    cmd += f"2> {out}.log"
+    with open(f"{out}.cmd", "w") as file:
+        file.write(cmd+"\n")
     p = sp.Popen(cmd, shell=True)
     p.wait()
 
@@ -137,12 +141,14 @@ def run_diamond(out, db, faa, threads):
     cmd += "--evalue 1e-5 "
     cmd += "--query-cover 50 "
     cmd += "--subject-cover 50 "
+    cmd += "-k 10000 "
     cmd += f"--query {faa} "
     cmd += f"--db {db}/checkv_refs.dmnd "
     cmd += f"--threads {threads} "
-    cmd += "-k 10000 "
     cmd += f"> {out} "
-    cmd += "2> /dev/null"
+    cmd += f"2> {out}.log"
+    with open(f"{out}.cmd", "w") as file:
+        file.write(cmd+"\n")
     p = sp.Popen(cmd, shell=True)
     p.wait()
 
@@ -156,33 +162,69 @@ def run_hmmsearch(out, db, faa, threads=1, evalue=10):
     cmd += f"--cpu {threads} "
     cmd += f"{db} "
     cmd += f"{faa} "
+    cmd += f"2> {out}.log "
+    with open(f"{out}.cmd", "w") as file:
+        file.write(cmd+"\n")
     p = sp.Popen(cmd, shell=True)
     p.wait()
 
-
-def search_hmms(out_dir, threads, db_dir):
+def search_hmms(tmp_dir, threads, db_dir):
     # make tmp
-    tmp = f"{out_dir}/tmp/hmmsearch"
-    if not os.path.exists(tmp):
-        os.makedirs(tmp)
+    hmm_dir = os.path.join(tmp_dir, "hmmsearch")
+    if not os.path.exists(hmm_dir):
+        os.makedirs(hmm_dir)
     # list faa files
     faa = [
         file
-        for file in os.listdir(out_dir + "/tmp/proteins")
+        for file in os.listdir(os.path.join(tmp_dir, "proteins"))
         if file.split(".")[-1] == "faa"
     ]
+    # list splits to process
+    splits = []
+    for file in os.listdir(db_dir):
+        if file.split(".")[0] != "hmmout": continue
+        split = file.split(".")[0]
+        out = os.path.join(hmm_dir, f"{split}.hmmout")
+        # file doesn't exist; add to list for processing
+        if not os.path.exists(out):
+            splits.append(split)
+        # check if file is complete
+        else:
+            x = False
+            with open(out) as subf:
+                for line in subf:
+                    if line == "# [ok]\n":
+                        x = True
+            if not x:
+                splits.append(split)
     # run hmmer
     args_list = []
-    for f in os.listdir(db_dir):
-        out = f"{tmp}/{f.split('.')[0]}.hmmout"
-        args_list.append([out, db_dir+"/"+f, out_dir + "/tmp/proteins.faa"])
+    for split in splits:
+        out = os.path.join(hmm_dir, f"{split}.hmmout")
+        hmmdb = os.path.join(db_dir, f"{split}.hmm")
+        faa = os.path.join(tmp_dir, "proteins.faa")
+        args_list.append([out, hmmdb, faa])
     parallel(run_hmmsearch, args_list, threads)
-    # cat output
-    with open(f"{tmp}.txt", "w") as f:
-        for file in os.listdir(tmp):
-            with open(f"{tmp}/{file}") as subf:
+    # check outputs are complete
+    complete = []
+    for file in os.listdir(hmm_dir):
+        if file.split(".")[-1] != "log":
+            x = False
+            with open(os.path.join(hmm_dir, file)) as subf:
                 for line in subf:
-                    f.write(line)
+                    if line == "# [ok]\n":
+                        x = True
+            complete.append(x)
+    num_fails = complete.count(False)
+    if num_fails > 0:
+        sys.exit(f"\nError: {num_fails}/80 hmmsearch tasks failed. Program should be rerun")
+    # cat output
+    with open(os.path.join(tmp_dir, "hmmsearch.txt"), "w") as f:
+        for file in os.listdir(hmm_dir):
+            if file.split(".")[-1] != "log":
+                with open(os.path.join(hmm_dir, file)) as subf:
+                    for line in subf:
+                        f.write(line)
 
 def call_genes(in_fna, out_dir, threads):
     # make tmp dir

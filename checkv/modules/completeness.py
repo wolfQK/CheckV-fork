@@ -9,6 +9,7 @@ import os
 import subprocess as sp
 import sys
 import time
+import shutil
 
 import numpy as np
 from checkv import utility
@@ -77,6 +78,18 @@ def fetch_arguments(parser):
         type=str,
         default=None,
         metavar="PATH",
+        help=argparse.SUPPRESS
+    )
+    parser.add_argument(
+        "--exclude_circular",
+        action="store_true",
+        default=False,
+        help=argparse.SUPPRESS
+    )
+    parser.add_argument(
+        "--exclude_genbank",
+        action="store_true",
+        default=False,
         help=argparse.SUPPRESS
     )
     parser.add_argument(
@@ -194,22 +207,27 @@ def main(args):
     utility.check_executables(["prodigal", "diamond"])
     args["db"] = utility.check_database(args["db"])
     args["tmp"] = os.path.join(args["output"], "tmp")
+
+    if args["restart"] and os.path.exists(args["tmp"]):
+        shutil.rmtree(args["tmp"])
     if not os.path.exists(args["output"]):
         os.makedirs(args["output"])
     if not os.path.exists(args["tmp"]):
         os.makedirs(args["tmp"])
 
-    logger.info("[1/5] Calling genes with prodigal…")
+    logger.info("[1/7] Calling genes with prodigal...")
     args["faa"] = os.path.join(args["tmp"], "proteins.faa")
-    if args["restart"] or not os.path.exists(args["faa"]):
+    if not os.path.exists(args["faa"]):
         utility.call_genes(args["input"], args["output"], args["threads"])
 
-    logger.info("[2/5] Running DIAMOND blastp search…")
+    logger.info("[2/7] Running DIAMOND blastp search...")
     args["blastp"] = os.path.join(args["tmp"], "diamond.tsv")
-    if args["restart"] or not os.path.exists(args["blastp"]):
+    if not os.path.exists(args["blastp"]):
         utility.run_diamond(args["blastp"], args["db"], args["faa"], args["threads"])
 
-    logger.info("[3/5] Initializing queries and databas…")
+    logger.info("[3/7] Initializing queries and database...")
+    
+    # read fna input
     genomes = {}
     for header, seq in utility.read_fasta(args["input"]):
         genome = Genome()
@@ -219,6 +237,7 @@ def main(args):
         genome.protlen = 0
         genome.aai = []
         genomes[genome.id] = genome
+
     # read input genes
     genes = {}
     for header, seq in utility.read_fasta(args["faa"]):
@@ -229,6 +248,18 @@ def main(args):
         genes[gene.id] = gene
         genomes[gene.genome_id].genes += 1
         genomes[gene.genome_id].protlen += gene.length
+
+    # read prophage predictions, if exists
+    p = os.path.join(args["output"], "contamination.tsv")
+    if os.path.exists(p):
+        for r in csv.DictReader(open(p), delimiter="\t"):
+            if "genome_id" in r: ## temporary fix due to changing field format
+                r["contig_id"] = r["genome_id"]
+            if "viral" in r["region_types"]:
+                genomes[r["contig_id"]].viral_length = int(r["viral_length"])
+            else:
+                genomes[r["contig_id"]].viral_length = None
+
     # read reference genomes
     refs = {}
     p = os.path.join(args["db"], "checkv_refs.tsv")
@@ -236,15 +267,20 @@ def main(args):
         genome = Genome()
         genome.id = r["checkv_id"]
         genome.length = int(r["length"])
+        genome.type = r["type"]
+        genome.weight = 1 if r["type"] == "circular" else 2 if r["type"] == "genbank" else None
         refs[genome.id] = genome
 
     # exclude references
     exclude = set([])
-    for l in open(args["db"] + "/exclude_genomes.list"):
-        exclude.add(l.rstrip())
     if args["exclude_list"]:
         for l in open(args["exclude_list"]):
             exclude.add(l.rstrip())
+    for genome in refs.values():
+        if args["exclude_circular"] and genome.type == "circular":
+            exclude.add(genome.id)
+        elif args["exclude_genbank"] and genome.type == "genbank":
+            exclude.add(genome.id)
 
     # estimated error rates for alignment cutoffs
     error_rates = {}
@@ -257,13 +293,15 @@ def main(args):
     error_keys["aai"] = sorted(list(set([_[1] for _ in error_rates.keys()])))
     error_keys["cov"] = sorted(list(set([_[2] for _ in error_rates.keys()])))
 
-    logger.info("[4/5] Computing AAI…")
+    logger.info("[4/7] Computing AAI...")
     args["aai"] = os.path.join(args["tmp"], "aai.tsv")
-    if args["restart"] or not os.path.exists(args["aai"]):
+    if not os.path.exists(args["aai"]):
         compute_aai(args["blastp"], args["aai"], genomes, refs)
+
+    logger.info("[5/7] Storing AAI...")
     for r in csv.DictReader(open(args["aai"]), delimiter="\t"):
 
-        # better formatting here to floats
+        # format to floats
         r["identity"] = float(r["identity"])
         r["aligned_genes"] = float(r["aligned_genes"])
         r["aligned_length"] = int(r["aligned_length"])
@@ -285,63 +323,72 @@ def main(args):
             if 100.0 * (top_score - r["score"]) / top_score <= args["percent_of_top_hit"]:
                 genomes[r["query"]].aai.append(r)
 
-    logger.info("[5/5] Estimating completeness…")
-    module_start = time.time()
-    p = os.path.join(args["output"], "completeness.tsv")
-    with open(p, "w") as out:
-        header = [
-            "genome_id",
-            "genome_length",
-            "num_hits",
-            "ref_length_min",
-            "ref_length_q1",
-            "ref_length_mean",
-            "ref_length_q2",
-            "ref_length_max",
-            "top_hit",
-            "top_hit_length",
-            "top_hit_aai",
-            "top_hit_cov",
-            "error_rate",
-        ]
-        out.write("\t".join(header) + "\n")
-
-        for genome in genomes.values():
-
-            # at least 1 hit to a reference
-            if len(genome.aai) > 0:
-
-                # fetch top hit
-                top = genome.aai[0]
-                key1 = take_closest(error_keys["length"], genome.length)
-                key2 = take_closest(error_keys["aai"], top["identity"])
-                key3 = take_closest(error_keys["cov"], top["percent_length"])
-                error_rate = error_rates[key1, key2, key3]
-
-                # estimate genome size
-                scores = [_["score"] for _ in genome.aai]
-                lengths = [refs[_["target"]].length for _ in genome.aai]
-                avg_len = sum([l * s for l, s in zip(lengths, scores)]) / sum(scores)
-                len_75, len_25 = np.percentile(lengths, [75, 25])
-                min_len, max_len = min(lengths), max(lengths)
-                num_hits = len(lengths)
-
-                # write
-                row = [genome.id, genome.length]
-                row += [num_hits, min_len, len_25, avg_len, len_75, max_len]
-                row += [
-                    top["target"],
-                    refs[top["target"]].length,
-                    top["identity"],
-                    top["percent_length"],
-                    error_rate,
-                ]
-                out.write("\t".join([str(_) for _ in row]) + "\n")
-
-            # no hits to any reference
+    logger.info("[6/7] Estimating completeness...")
+    for genome in genomes.values():
+        rec = {}
+        rec["contig_id"] = genome.id
+        rec["contig_length"] = genome.length
+        
+        if len(genome.aai) > 0:
+            
+            # fetch top hit
+            rec["ref_name"] = genome.aai[0]["target"]
+            rec["ref_aai"] = genome.aai[0]["identity"]
+            rec["ref_af"] = genome.aai[0]["percent_length"]
+            
+            # get estimation error
+            key1 = take_closest(error_keys["length"], genome.length)
+            key2 = take_closest(error_keys["aai"], genome.aai[0]["identity"])
+            key3 = take_closest(error_keys["cov"], genome.aai[0]["percent_length"])
+            rec["est_error"] = error_rates[key1, key2, key3]
+            rec["confidence"] = "low" if rec["est_error"] == "NA" else "high" if rec["est_error"] <= 5 else "medium" if rec["est_error"] <= 10 else "low"
+           
+            # compute expected genome length
+            lengths = [refs[_["target"]].length for _ in genome.aai]
+            weights = [refs[_["target"]].weight * _["score"] for _ in genome.aai]
+            rec["expected_length"] = sum([l * w for l, w in zip(lengths, weights)]) / sum(weights)
+            
+            # estimate completness
+            if genome.viral_length is not None:
+                rec["viral_length"] = genome.viral_length
+                rec["completeness"] = 100.0 * genome.viral_length / rec["expected_length"]
             else:
-                row = [genome.id, genome.length] + ["NA"] * 11
-                out.write("\t".join([str(_) for _ in row]) + "\n")
+                rec["completeness"] = 100.0 * genome.length / rec["expected_length"]
+            
+            # add comment
+            if rec["completeness"] > 110:
+                rec["comment"] = "'Warning: completeness >110%. Estimate may be unreliable.'"
+
+            # summarize distribution of reference lengths within 50% of top hit
+            len_75, len_25 = np.percentile(lengths, [75, 25])
+            len_min, len_max = min(lengths), max(lengths)
+            len_med = np.median(lengths)
+            rec["ref_lengths"] = ",".join([str(len_min), str(len_25), str(len_med), str(len_75), str(len_max)])
+            rec["ref_hits"] = len(genome.aai)
+            
+        genome.rec = rec
+
+    logger.info("[7/7] Writing results...")
+    p = os.path.join(args["output"], "completeness.tsv")
+    fields = [
+        "contig_id",
+        "contig_length",
+        "viral_length",
+        "expected_length",
+        "completeness",
+        "confidence",
+        "ref_name",
+        "ref_aai",
+        "ref_af",
+        "ref_hits",
+        "ref_lengths",
+        "comment"
+        ]
+    with open(p, "w") as out:
+        out.write("\t".join(fields) + "\n")
+        for genome in genomes.values():
+            row = [str(genome.rec[f]) if f in genome.rec else 'NA' for f in fields]
+            out.write("\t".join(row) + "\n")
 
     # done!
     logger.info("\nDone!")

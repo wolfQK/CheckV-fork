@@ -6,6 +6,7 @@ import logging
 import os
 import subprocess as sp
 import time
+import shutil
 
 import numpy as np
 from checkv import utility
@@ -51,12 +52,6 @@ def fetch_arguments(parser):
         help="Number of threads to use for Prodigal and hmmsearch",
     )
     parser.add_argument(
-        "--hmm-db",
-        choices=["full", "reduced"],
-        default="reduced",
-        help="Use full (37520) or reduced HMM db (11134)",
-    )
-    parser.add_argument(
         "--restart",
         action="store_true",
         default=False,
@@ -68,7 +63,13 @@ def fetch_arguments(parser):
         default=False,
         help="Display logging messages",
     )
-
+    parser.add_argument(
+        "--exclude",
+        type=str,
+        required=False,
+        metavar="PATH",
+        help=argparse.SUPPRESS,
+    )
 
 def compute_gc(x):
     return 100.0 * (x.count("G") + x.count("C")) / len(x)
@@ -289,17 +290,22 @@ def main(args):
     args["tmp"] = os.path.join(args["output"], "tmp")
     if not os.path.exists(args["output"]):
         os.makedirs(args["output"])
+    if args["restart"] and os.path.exists(args["tmp"]):
+        shutil.rmtree(args["tmp"])
     if not os.path.exists(args["tmp"]):
         os.makedirs(args["tmp"])
 
-    logger.info("[1/8] Reading database info…")
+    logger.info("[1/8] Reading database info...")
     hmm_info = {}
     p = os.path.join(args["db"], "checkv_hmms.tsv")
     for r in csv.DictReader(open(p), delimiter="\t"):
-        r["score_cutoff"] = float(r["score_cutoff"])
+        r["score_cutoff"] = max([float(r["score_cutoff"]), 25.0]) # min cutoff == 25 bits
         hmm_info[r["hmm"]] = r
+    if args["exclude"]:
+        for l in open(args["exclude"]):
+            del hmm_info[l.rstrip()]
 
-    logger.info("[2/8] Reading genome info…")
+    logger.info("[2/8] Reading genome info...")
     genomes = {}
     for r in utility.read_fasta(args["input"]):
         header, seq = r
@@ -311,12 +317,12 @@ def main(args):
         genome.viral_hits = {}
         genomes[genome.id] = genome
 
-    logger.info("[3/8] Calling genes with prodigal…")
+    logger.info("[3/8] Calling genes with prodigal...")
     args["faa"] = os.path.join(args["tmp"], "proteins.faa")
-    if args["restart"] or not os.path.exists(args["faa"]):
+    if not os.path.exists(args["faa"]):
         utility.call_genes(args["input"], args["output"], args["threads"])
 
-    logger.info("[4/8] Reading gene info…")  # assumes PRODIGAL V2.6.3 FORMAT
+    logger.info("[4/8] Reading gene info...")  # assumes PRODIGAL V2.6.3 FORMAT
     genes = {}
     for header, seq in utility.read_fasta(args["faa"]):
         gene = Gene()
@@ -331,25 +337,22 @@ def main(args):
         genes[gene.id] = gene
         genomes[gene.genome_id].genes.append(gene.id)
 
-    logger.info("[5/8] Running hmmsearch…")
+    logger.info("[5/8] Running hmmsearch...")
     args["hmmout"] = os.path.join(args["tmp"], "hmmsearch.txt")
-    if args["restart"] or not os.path.exists(args["hmmout"]):
-        if args["hmm_db"] == "full":
-            db_dir = os.path.join(args["db"], "checkv_37520_hmm")
-        elif args["hmm_db"] == "reduced":
-            db_dir = os.path.join(args["db"], "checkv_11134_hmm")
-        utility.search_hmms(args["output"], args["threads"], db_dir)
+    if not os.path.exists(args["hmmout"]):
+        db_dir = os.path.join(args["db"], "checkv_hmms")
+        utility.search_hmms(args["tmp"], args["threads"], db_dir)
 
-    logger.info("[6/8] Annotating genes…")
+    logger.info("[6/8] Annotating genes...")
     annotate_genes(hmm_info, genomes, genes, args)
 
-    logger.info("[7/8] Identifying host regions…")
+    logger.info("[7/8] Identifying host regions...")
     for genome in genomes.values():
         genome.regions = define_regions(genome, genes, min_fract=1.0, max_genes=35)
 
-    logger.info("[8/8] Writing results…")
+    logger.info("[8/8] Writing results...")
     out = open(args["output"] + "/contamination.tsv", "w")
-    header = ["genome_id", "total_length", "viral_length", "host_length"]
+    header = ["contig_id", "contig_length", "viral_length", "host_length"]
     header += ["total_genes", "viral_genes", "host_genes"]
     header += ["region_types", "region_lengths", "region_coords", "region_genes"]
     out.write("\t".join(header) + "\n")
@@ -366,7 +369,7 @@ def main(args):
         out.write("\t".join([str(_) for _ in row]) + "\n")
 
     with open(args["tmp"]+"/gene_features.tsv", "w") as out:
-        header = ["genome_id", "gene_num", "start", "end", "strand", "hmm_cat", "gc"]
+        header = ["contig_id", "gene_num", "start", "end", "strand", "hmm_cat", "gc"]
         out.write("\t".join(header)+"\n")
         for genome in genomes.values():
             for gene_id in genome.genes:
@@ -376,7 +379,7 @@ def main(args):
                 out.write("\t".join([str(_) for _ in row])+"\n")
 
     with open(args["tmp"]+"/gene_annotations.tsv", "w") as out:
-        header = ["genome_id", "gene_num", "target_hmm", "hmm_db", "hmm_cat", "target_score", "target_evalue"]
+        header = ["contig_id", "gene_num", "target_hmm", "hmm_db", "hmm_cat", "target_score", "target_evalue"]
         out.write("\t".join(header)+"\n")
         for genome in genomes.values():
             for gene_id in genome.genes:
