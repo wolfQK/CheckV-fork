@@ -317,10 +317,12 @@ def main(args):
         genome.viral_hits = {}
         genomes[genome.id] = genome
 
-    logger.info("[3/8] Calling genes with prodigal...")
     args["faa"] = os.path.join(args["tmp"], "proteins.faa")
     if not os.path.exists(args["faa"]):
+        logger.info("[3/8] Calling genes with prodigal...")
         utility.call_genes(args["input"], args["output"], args["threads"])
+    else:
+        logger.info("[3/8] Skipping gene calling…")
 
     logger.info("[4/8] Reading gene info...")  # assumes PRODIGAL V2.6.3 FORMAT
     genes = {}
@@ -337,11 +339,13 @@ def main(args):
         genes[gene.id] = gene
         genomes[gene.genome_id].genes.append(gene.id)
 
-    logger.info("[5/8] Running hmmsearch...")
     args["hmmout"] = os.path.join(args["tmp"], "hmmsearch.txt")
     if not os.path.exists(args["hmmout"]):
+        logger.info("[5/8] Running hmmsearch...")
         db_dir = os.path.join(args["db"], "checkv_hmms")
         utility.search_hmms(args["tmp"], args["threads"], db_dir)
+    else:
+        logger.info("[5/8] Skipping hmmsearch...")
 
     logger.info("[6/8] Annotating genes...")
     annotate_genes(hmm_info, genomes, genes, args)
@@ -351,7 +355,7 @@ def main(args):
         genome.regions = define_regions(genome, genes, min_fract=1.0, max_genes=35)
 
     logger.info("[8/8] Writing results...")
-    out = open(args["output"] + "/contamination.tsv", "w")
+    out = open(os.path.join(args["output"], "contamination.tsv"), "w")
     header = ["contig_id", "contig_length", "viral_length", "host_length"]
     header += ["total_genes", "viral_genes", "host_genes"]
     header += ["region_types", "region_lengths", "region_coords", "region_genes"]
@@ -368,7 +372,7 @@ def main(args):
         row += [region_types, region_lengths, region_coords, region_genes]
         out.write("\t".join([str(_) for _ in row]) + "\n")
 
-    with open(args["tmp"]+"/gene_features.tsv", "w") as out:
+    with open(os.path.join(args["tmp"], "gene_features.tsv"), "w") as out:
         header = ["contig_id", "gene_num", "start", "end", "strand", "hmm_cat", "gc"]
         out.write("\t".join(header)+"\n")
         for genome in genomes.values():
@@ -378,7 +382,7 @@ def main(args):
                 row = [genome.id, num, gene.start, gene.end, gene.strand, gene.cat, round(gene.gc,1)]
                 out.write("\t".join([str(_) for _ in row])+"\n")
 
-    with open(args["tmp"]+"/gene_annotations.tsv", "w") as out:
+    with open(os.path.join(args["tmp"], "gene_annotations.tsv"), "w") as out:
         header = ["contig_id", "gene_num", "target_hmm", "hmm_db", "hmm_cat", "target_score", "target_evalue"]
         out.write("\t".join(header)+"\n")
         for genome in genomes.values():

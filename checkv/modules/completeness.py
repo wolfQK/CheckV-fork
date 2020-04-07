@@ -215,15 +215,19 @@ def main(args):
     if not os.path.exists(args["tmp"]):
         os.makedirs(args["tmp"])
 
-    logger.info("[1/7] Calling genes with prodigal...")
     args["faa"] = os.path.join(args["tmp"], "proteins.faa")
     if not os.path.exists(args["faa"]):
+        logger.info("[1/7] Calling genes with prodigal...")
         utility.call_genes(args["input"], args["output"], args["threads"])
+    else:
+        logger.info("[1/7] Skipping gene calling…")
 
-    logger.info("[2/7] Running DIAMOND blastp search...")
     args["blastp"] = os.path.join(args["tmp"], "diamond.tsv")
     if not os.path.exists(args["blastp"]):
+        logger.info("[2/7] Running DIAMOND blastp search...")
         utility.run_diamond(args["blastp"], args["db"], args["faa"], args["threads"])
+    else:
+        logger.info("[2/7] Skipping DIAMOND blastp search…")
 
     logger.info("[3/7] Initializing queries and database...")
     
@@ -292,11 +296,13 @@ def main(args):
     error_keys["length"] = sorted(list(set([_[0] for _ in error_rates.keys()])))
     error_keys["aai"] = sorted(list(set([_[1] for _ in error_rates.keys()])))
     error_keys["cov"] = sorted(list(set([_[2] for _ in error_rates.keys()])))
-
-    logger.info("[4/7] Computing AAI...")
+   
     args["aai"] = os.path.join(args["tmp"], "aai.tsv")
     if not os.path.exists(args["aai"]):
+        logger.info("[4/7] Computing AAI...")
         compute_aai(args["blastp"], args["aai"], genomes, refs)
+    else:
+        logger.info("[4/7] Skipping AAI computation...")
 
     logger.info("[5/7] Storing AAI...")
     for r in csv.DictReader(open(args["aai"]), delimiter="\t"):

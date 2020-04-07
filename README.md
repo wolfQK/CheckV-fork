@@ -15,7 +15,7 @@ conda install -c conda-forge -c importlib_metadata bioconda biopython numpy psut
 
 Install CheckV:
 ```bash
-cd /path/to/checkv  
+cd /path/to/checkv
 python setup.py develop
 ```
 
@@ -49,12 +49,12 @@ checkv completeness test.fna checkv_out -t 16 --verbose
 
 Estimate contamination for integrated prophages:
 
-* using full database (slower):
+* using full database (slower, more sensitive):
 ```bash
 checkv contamination test.fna checkv_out -t 16 --hmm-db full --verbose
 ```
 
-* or using reduced database (faster):
+* or using reduced database (faster, less sensitive):
 ```bash
 checkv contamination test.fna checkv_out -t 16 --hmm-db reduced --verbose
 ```
