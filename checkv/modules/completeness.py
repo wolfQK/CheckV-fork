@@ -239,6 +239,7 @@ def main(args):
         genome.length = len(seq)
         genome.genes = 0
         genome.protlen = 0
+        genome.viral_length = None
         genome.aai = []
         genomes[genome.id] = genome
 
