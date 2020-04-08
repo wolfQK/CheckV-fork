@@ -1,58 +1,74 @@
 # CheckV
-Assessing the quality of viral genomes from metagenomes & viromes
+Assessing the quality of metagenome-assembled viral genomes
 
 ## Installation
 
-Download repository:  
+There are two methods to install CheckV in your computer:
+
+- Using `conda`:  
+
 ```bash
-git clone bitbucket.org/berkeleylab/checkv
+conda install -c conda-forge -c bioconda checkv
 ```
 
-Install dependencies:  
+- Using `pip`:
+
 ```bash
-conda install -c conda-forge -c importlib_metadata bioconda biopython numpy psutil blast diamond=0.9.30 hmmer prodigal
+pip install checkv
 ```
 
-Install CheckV:  
-```bash
-cd /path/to/checkv
-python setup.py develop
-```
+If you decide to install CheckV via `pip`, make sure you also have the following external dependencies installed:
 
-Download database:  
+- BLAST+ (v2.5.0)
+- DIAMOND (v0.9.30)
+- HMMER (v3.3)
+- Prodigal (v2.6.3)
+
+### CheckV database
+
+Whichever method you choose to install CheckV you will need to download and extract database in order to use it:
+
 ```bash
 wget https://www.dropbox.com/s/ysv382w01ee7y3t/checkv-db-v0.2.tar.gz
 tar -zxvf checkv-db-v0.1.tar.gz
 ```
 
-Setup environment:  
+Update your environment:
+
 ```bash
-export CHECKVDB=/path/to/checkv-db-v0.1
+export CHECKVDB=/path/to/checkv-db-v0.2
 ```
+
+If you don't want to set the environmet variable, you can still use the database through the `-d` parameter.
 
 ## Quick start
 
 Navigate to CheckV test directory:  
+
 ```bash
 cd /path/to/checkv/test
 ```
 
-Estimate host contamination on integrated prophages:
+Identify flanking host regions on integrated prophages:
+
 ```bash
 checkv contamination test.fna checkv_out -t 16
 ```
 
 Estimate completeness for genome fragments:
+
 ```bash
 checkv completeness test.fna checkv_out -t 16
 ```
 
 Identify (possible) complete genomes with terminal repeats:
+
 ```bash
 checkv terminal_repeats test.fna checkv_out
 ```
 
 Summarize CheckV output & classify contigs into quality tiers:
+
 ```bash
 checkv quality_summary test.fna checkv_out
 ```
