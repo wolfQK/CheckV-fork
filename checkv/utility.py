@@ -182,7 +182,6 @@ def search_hmms(tmp_dir, threads, db_dir):
     # list splits to process
     splits = []
     for file in os.listdir(db_dir):
-        if file.split(".")[0] != "hmmout": continue
         split = file.split(".")[0]
         out = os.path.join(hmm_dir, f"{split}.hmmout")
         # file doesn't exist; add to list for processing
@@ -208,7 +207,7 @@ def search_hmms(tmp_dir, threads, db_dir):
     # check outputs are complete
     complete = []
     for file in os.listdir(hmm_dir):
-        if file.split(".")[-1] != "log":
+        if file.split(".")[-1] == "hmmout":
             x = False
             with open(os.path.join(hmm_dir, file)) as subf:
                 for line in subf:
@@ -221,7 +220,7 @@ def search_hmms(tmp_dir, threads, db_dir):
     # cat output
     with open(os.path.join(tmp_dir, "hmmsearch.txt"), "w") as f:
         for file in os.listdir(hmm_dir):
-            if file.split(".")[-1] != "log":
+            if file.split(".")[-1] == "hmmout":
                 with open(os.path.join(hmm_dir, file)) as subf:
                     for line in subf:
                         f.write(line)

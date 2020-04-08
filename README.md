@@ -10,7 +10,7 @@ git clone bitbucket.org/berkeleylab/checkv
 
 Install dependencies:  
 ```bash
-conda install -c conda-forge -c importlib_metadata bioconda biopython numpy psutil blast diamond hmmer prodigal
+conda install -c conda-forge -c importlib_metadata bioconda biopython numpy psutil blast diamond=0.9.30 hmmer prodigal
 ```
 
 Install CheckV:  
