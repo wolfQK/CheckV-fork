@@ -6,7 +6,7 @@ Assessing the quality of metagenome-assembled viral genomes
 
 There are two methods to install CheckV in your computer:
 
-- Using `conda`:  
+- Using `conda`:
 
 ```bash
 conda install -c conda-forge -c bioconda checkv
@@ -25,6 +25,8 @@ If you decide to install CheckV via `pip`, make sure you also have the following
 - HMMER (v3.3)
 - Prodigal (v2.6.3)
 
+The versions listed above were the ones that were properly tested. Different versions may also work.
+
 ### CheckV database
 
 Whichever method you choose to install CheckV you will need to download and extract database in order to use it:
@@ -40,11 +42,11 @@ Update your environment:
 export CHECKVDB=/path/to/checkv-db-v0.2
 ```
 
-If you don't want to set the environmet variable, you can still use the database through the `-d` parameter.
+If you don't want to set the environmet variable, you can still use the database through the `-d` parameter of the `contamination` and `completeness` modules.
 
 ## Quick start
 
-Navigate to CheckV test directory:  
+Navigate to CheckV test directory:
 
 ```bash
 cd /path/to/checkv/test
