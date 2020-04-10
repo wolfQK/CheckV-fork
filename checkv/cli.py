@@ -47,7 +47,7 @@ def cli():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     checkv.quality_summary.fetch_arguments(summary_parser)
-    
+
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(0)
@@ -62,7 +62,7 @@ def cli():
             contamination_parser.print_help()
             sys.exit(0)
         elif sys.argv[1] == "quality_summary":
-            quality_summary.print_help()
+            summary_parser.print_help()
             sys.exit(0)
 
     args = vars(parser.parse_args())
