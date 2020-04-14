@@ -322,7 +322,7 @@ def main(args):
         logger.info("[3/8] Calling genes with prodigal...")
         utility.call_genes(args["input"], args["output"], args["threads"])
     else:
-        logger.info("[3/8] Skipping gene calling…")
+        logger.info("[3/8] Skipping gene calling...")
 
     logger.info("[4/8] Reading gene info...")  # assumes PRODIGAL V2.6.3 FORMAT
     genes = {}

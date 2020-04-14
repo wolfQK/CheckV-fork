@@ -220,14 +220,14 @@ def main(args):
         logger.info("[1/7] Calling genes with prodigal...")
         utility.call_genes(args["input"], args["output"], args["threads"])
     else:
-        logger.info("[1/7] Skipping gene calling…")
+        logger.info("[1/7] Skipping gene calling...")
 
     args["blastp"] = os.path.join(args["tmp"], "diamond.tsv")
     if not os.path.exists(args["blastp"]):
         logger.info("[2/7] Running DIAMOND blastp search...")
         utility.run_diamond(args["blastp"], args["db"], args["faa"], args["threads"])
     else:
-        logger.info("[2/7] Skipping DIAMOND blastp search…")
+        logger.info("[2/7] Skipping DIAMOND blastp search...")
 
     logger.info("[3/7] Initializing queries and database...")
     
@@ -317,6 +317,8 @@ def main(args):
 
         if r["target"] in exclude:
             continue
+        elif r["target"] not in refs:
+            continue
         elif (
             args["exclude_identical"]
             and r["identity"] == 100
@@ -362,15 +364,11 @@ def main(args):
             else:
                 rec["completeness"] = 100.0 * genome.length / rec["expected_length"]
             
-            # add comment
-            if rec["completeness"] > 110:
-                rec["comment"] = "'Warning: completeness >110%. Estimate may be unreliable.'"
-
             # summarize distribution of reference lengths within 50% of top hit
             len_75, len_25 = np.percentile(lengths, [75, 25])
             len_min, len_max = min(lengths), max(lengths)
             len_med = np.median(lengths)
-            rec["ref_lengths"] = ",".join([str(len_min), str(len_25), str(len_med), str(len_75), str(len_max)])
+            rec["ref_length_distribution"] = ",".join([str(len_min), str(len_25), str(len_med), str(len_75), str(len_max)])
             rec["ref_hits"] = len(genome.aai)
             
         genome.rec = rec
@@ -388,8 +386,7 @@ def main(args):
         "ref_aai",
         "ref_af",
         "ref_hits",
-        "ref_lengths",
-        "comment"
+        "ref_length_distribution"
         ]
     with open(p, "w") as out:
         out.write("\t".join(fields) + "\n")

@@ -7,7 +7,6 @@ import time
 import csv
 import sys
 import string
-import Bio.SeqIO
 from checkv import utility
 
 
@@ -49,11 +48,11 @@ def main(args):
 
     logger.info("[1/6] Reading input sequences...")
     genomes = {}
-    for r in Bio.SeqIO.parse(args["input"], "fasta"):
+    for header, seq in utility.read_fasta(args["input"]):
         genome = Genome()
-        genome.id = r.id
-        genome.seq = str(r.seq).upper()
-        genome.length = len(genome.seq)
+        genome.id = header.split()[0]
+        genome.seq = seq
+        genome.length = len(seq)
         genome.termini = "NA"
         genomes[genome.id] = genome
 
@@ -87,7 +86,7 @@ def main(args):
             if r["confidence"] in ["high", "medium"]:
                 genome.completeness = round(float(r["completeness"]),2)
                 if genome.completeness > 110:
-                    genome.comment = "'Warning: completeness >110%. Estimate may be unreliable.'"
+                    genome.comment = "Warning: completeness >110%. Estimate may be unreliable."
                 else:
                     genome.comment = ""
             else:

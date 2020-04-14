@@ -107,7 +107,8 @@ def read_fasta(path):
         for record in SeqIO.parse(f, "fasta"):
             name = record.description
             seq = str(record.seq).upper()
-            yield name, seq
+            if name != "" and seq != "":
+                yield name, seq
 
 
 def run_prodigal(out):
