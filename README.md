@@ -32,14 +32,14 @@ The versions listed above were the ones that were properly tested. Different ver
 Whichever method you choose to install CheckV you will need to download and extract database in order to use it:
 
 ```bash
-wget https://www.dropbox.com/s/ysv382w01ee7y3t/checkv-db-v0.2.tar.gz
-tar -zxvf checkv-db-v0.1.tar.gz
+wget https://www.dropbox.com/s/xz8h7d1ycrf4fjf/checkv-db-v0.4.tar.gz
+tar -zxvf checkv-db-v0.4.tar.gz
 ```
 
 Update your environment:
 
 ```bash
-export CHECKVDB=/path/to/checkv-db-v0.2
+export CHECKVDB=/path/to/checkv-db-v0.4
 ```
 
 If you don't want to set the environmet variable, you can still use the database through the `-d` parameter of the `contamination` and `completeness` modules.

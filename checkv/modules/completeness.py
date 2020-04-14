@@ -267,7 +267,7 @@ def main(args):
 
     # read reference genomes
     refs = {}
-    p = os.path.join(args["db"], "checkv_refs.tsv")
+    p = os.path.join(args["db"], "genome_db/checkv_reps.tsv")
     for r in csv.DictReader(open(p), delimiter="\t"):
         genome = Genome()
         genome.id = r["checkv_id"]
@@ -289,7 +289,7 @@ def main(args):
 
     # estimated error rates for alignment cutoffs
     error_rates = {}
-    p = os.path.join(args["db"], "error_rates.tsv")
+    p = os.path.join(args["db"], "genome_db/checkv_error.tsv")
     for r in csv.DictReader(open(p), delimiter="\t"):
         key = int(r["length"]), int(r["aai"]), int(r["cov"])
         error_rates[key] = float(r["error"]) if int(r["count"]) > 100 else "NA"

@@ -92,7 +92,8 @@ def check_database(dbdir):
     if not os.path.exists(dbdir):
         msg = f"Error: database dir not found '{dbdir}'"
         sys.exit(msg)
-    files = ["checkv_refs.dmnd", "checkv_refs.tsv"]
+    files = ["genome_db/checkv_reps.dmnd", "genome_db/checkv_reps.tsv", "genome_db/checkv_error.tsv",
+             "hmm_db/checkv_hmms.tsv", "hmm_db/checkv_hmms"]
     for f in files:
         path = os.path.join(dbdir, f)
         if not os.path.exists(path):
@@ -144,7 +145,7 @@ def run_diamond(out, db, faa, threads):
     cmd += "--subject-cover 50 "
     cmd += "-k 10000 "
     cmd += f"--query {faa} "
-    cmd += f"--db {db}/checkv_refs.dmnd "
+    cmd += f"--db {db}/genome_db/checkv_reps.dmnd "
     cmd += f"--threads {threads} "
     cmd += f"> {out} "
     cmd += f"2> {out}.log"

@@ -297,7 +297,7 @@ def main(args):
 
     logger.info("[1/8] Reading database info...")
     hmm_info = {}
-    p = os.path.join(args["db"], "checkv_hmms.tsv")
+    p = os.path.join(args["db"], "hmm_db/checkv_hmms.tsv")
     for r in csv.DictReader(open(p), delimiter="\t"):
         r["score_cutoff"] = max([float(r["score_cutoff"]), 25.0]) # min cutoff == 25 bits
         hmm_info[r["hmm"]] = r
@@ -342,7 +342,7 @@ def main(args):
     args["hmmout"] = os.path.join(args["tmp"], "hmmsearch.txt")
     if not os.path.exists(args["hmmout"]):
         logger.info("[5/8] Running hmmsearch...")
-        db_dir = os.path.join(args["db"], "checkv_hmms")
+        db_dir = os.path.join(args["db"], "hmm_db/checkv_hmms")
         utility.search_hmms(args["tmp"], args["threads"], db_dir)
     else:
         logger.info("[5/8] Skipping hmmsearch...")

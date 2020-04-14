@@ -29,7 +29,7 @@ setup(
         "Natural Language :: English",
         "Topic :: Software Development :: Libraries",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
-        "License :: OSI Approved :: BSD",
+        "License :: OSI Approved :: BSD License",
         "Programming Language :: Python :: 3",
     ],
 )
