@@ -109,83 +109,75 @@ def annotate_genes(hmm_info, genomes, genes, args):
         genome.count_host = sum(1 for _ in genome.genes if genes[_].cat == -1)
 
 
+def compute_delta(my_genes, s1, e1, s2, e2, gc_weight):
+    
+    # extend windows to ensure at least 1 annotated gene
+    if all([g.cat == 0 for g in my_genes[s1:e1]]):
+        for j in range(0, s1)[::-1]:
+            s1 = j
+            if my_genes[s1].cat != 0:
+                break
+    if all([g.cat == 0 for g in my_genes[s2:e2]]):
+        for j in range(e2 + 1, len(my_genes)):
+            e2 = j
+            if my_genes[e2].cat != 0:
+                break
+
+    # get gene values for 2 windows
+    win1 = my_genes[s1:e1]
+    win2 = my_genes[s2:e2]
+    v1 = [g.cat for g in win1 if g.cat != 0]
+    v2 = [g.cat for g in win2 if g.cat != 0]
+    g1 = [g.gc for g in win1]
+    g2 = [g.gc for g in win2]
+
+    # compute delta between windows
+    if len(v1) > 0 and len(v2) > 0:
+        delta_v = np.average(v1) - np.average(v2)
+        delta_g = abs(np.average(g1) - np.average(g2))
+        delta = (abs(delta_v) + delta_g * gc_weight) * np.sign(delta_v)
+    else:
+        delta = 0
+
+    # store
+    d = {
+        "delta": delta,
+        "coords": [s1, e1, s2, e2],
+        "v1": v1,
+        "v2": v2,
+        "v1_len": len(v1),
+        "v2_len": len(v2),
+        "win1_len": len(win1),
+        "win2_len": len(win2),
+        "win1_fract_host": 1.0 * len([_ for _ in v1 if _ == -1]) / len(win1),
+        "win2_fract_host": 1.0 * len([_ for _ in v2 if _ == -1]) / len(win2),
+    }
+
+    return (d)
+
 def define_regions(
-    genome, genes, min_fract, min_genes=10, max_genes=50, gc_weight=0.02, delta_cutoff=1.2
+    genome, genes, win_size, gc_weight, delta_cutoff, min_host_fract
 ):
     """
-    1. Determine win size based on <min_genes>, <max_genes>, <min_fract>
-    2. Score each possible breakpoint using combination of viral annotations and GC content
-    3. Identify breakpoints. See code below for list of rules for this process
-    4. Identify host/viral regions based on breakpoints
-    5. Return list of breakpoints and regions
+    1. Score each possible breakpoint using combination of viral annotations and GC content
+    2. Identify breakpoints. See code below for list of rules for this process
+    3. Identify host/viral regions based on breakpoints
+    4. Return list of breakpoints and regions
     """
 
-    # 1. determine window size
-    # window size adjusted based on contig length
-    # at least min_genes or min_fract of genes (whichever is bigger)
-    # but no more than max_genes
-    count_fract = int(round(len(genome.genes) * min_fract))
-    win_size = min([max([count_fract, min_genes]), max_genes])
-
-    # 2. Score each possible breakpoint
-
+    # 1. Score each possible breakpoint
     # get gene annotations and gc content
     # microbial annotation = -1
     # viral annotation = 1
     my_genes = [genes[_] for _ in genome.genes]
-
-    # compute deltas
     deltas = []
     for i in range(1, len(my_genes)):
-
-        # get gene indexes for 2 windows
         s1, e1 = max([i - win_size, 0]), i
         s2, e2 = i, min([i + win_size, len(my_genes)])
-
-        # extend windows to ensure at least 1 annotated gene
-        if all([g.cat == 0 for g in my_genes[s1:e1]]):
-            for j in range(0, s1)[::-1]:
-                s1 = j
-                if my_genes[s1].cat != 0:
-                    break
-        if all([g.cat == 0 for g in my_genes[s2:e2]]):
-            for j in range(e2 + 1, len(my_genes)):
-                e2 = j
-                if my_genes[e2].cat != 0:
-                    break
-
-        # get gene values for 2 windows
-        win1 = my_genes[s1:e1]
-        win2 = my_genes[s2:e2]
-        v1 = [g.cat for g in win1 if g.cat != 0]
-        v2 = [g.cat for g in win2 if g.cat != 0]
-        g1 = [g.gc for g in win1]
-        g2 = [g.gc for g in win2]
-
-        # compute delta between windows
-        if len(v1) > 0 and len(v2) > 0:
-            delta_v = np.average(v1) - np.average(v2)
-            delta_g = abs(np.average(g1) - np.average(g2))
-            delta = (abs(delta_v) + delta_g * gc_weight) * np.sign(delta_v)
-        else:
-            delta = 0
-
-        # store
-        d = {
-            "delta": delta,
-            "coords": [s1, e1, s2, e2],
-            "v1": v1,
-            "v2": v2,
-            "v1_len": len(v1),
-            "v2_len": len(v2),
-            "win1_len": len(win1),
-            "win2_len": len(win2),
-            "win1_fract_host": 1.0 * len([_ for _ in v1 if _ == -1]) / len(win1),
-            "win2_fract_host": 1.0 * len([_ for _ in v2 if _ == -1]) / len(win2),
-        }
+        d = compute_delta(my_genes, s1, e1, s2, e2, gc_weight)
         deltas.append(d)
 
-    # 3. Identify breakpoints
+    # 2. Identify breakpoints
     breaks = []
     for d in deltas:
 
@@ -196,8 +188,8 @@ def define_regions(
         # at least 4 total annotated genes
         elif d["v1_len"] + d["v2_len"] < 4:
             continue
-        # <20% host genes in both windows
-        elif d["win1_fract_host"] < 0.20 and d["win2_fract_host"] < 0.20:
+        # % host genes in both windows
+        elif d["win1_fract_host"] < min_host_fract and d["win2_fract_host"] < min_host_fract:
             continue
 
         # add first breakpoint
@@ -232,8 +224,8 @@ def define_regions(
             # same delta, positive, virus-host --> use right-most boundary
             elif abs(d["delta"]) == abs(breaks[-1]["delta"]) and d["delta"] > 0:
                 breaks[-1] = d
-
-    # 4. identify viral/host regions
+    
+    # 3. identify viral/host regions
     regions = []
     for d in breaks:
         s1, e1, s2, e2 = d["coords"]
@@ -352,7 +344,7 @@ def main(args):
 
     logger.info("[7/8] Identifying host regions...")
     for genome in genomes.values():
-        genome.regions = define_regions(genome, genes, min_fract=1.0, max_genes=35)
+        genome.regions = define_regions(genome, genes, win_size=40, min_host_fract=0.30, gc_weight=0.02, delta_cutoff=1.2)
 
     logger.info("[8/8] Writing results...")
     out = open(os.path.join(args["output"], "contamination.tsv"), "w")

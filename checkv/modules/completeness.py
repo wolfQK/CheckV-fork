@@ -64,7 +64,12 @@ def fetch_arguments(parser):
         "--percent_of_top_hit",
         type=float,
         default=50,
-        metavar="FLOAT",
+        help=argparse.SUPPRESS,
+    )
+    parser.add_argument(
+        "--max_aai",
+        type=float,
+        default=None,
         help=argparse.SUPPRESS,
     )
     parser.add_argument(
@@ -315,7 +320,9 @@ def main(args):
         r["score"] = float(r["score"])
         r["percent_length"] = float(r["percent_length"])
 
-        if r["target"] in exclude:
+        if args["max_aai"] is not None and r["identity"] > args["max_aai"]:
+            continue
+        elif r["target"] in exclude:
             continue
         elif r["target"] not in refs:
             continue
