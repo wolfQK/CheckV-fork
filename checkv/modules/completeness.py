@@ -1,17 +1,16 @@
-#!/usr/bin/env python
-
 import argparse
 import bisect
 import csv
 import logging
 import operator
 import os
+import shutil
 import subprocess as sp
 import sys
 import time
-import shutil
 
 import numpy as np
+
 from checkv import utility
 
 
@@ -235,7 +234,7 @@ def main(args):
         logger.info("[2/7] Skipping DIAMOND blastp search...")
 
     logger.info("[3/7] Initializing queries and database...")
-    
+
     # read fna input
     genomes = {}
     for header, seq in utility.read_fasta(args["input"]):
@@ -302,7 +301,7 @@ def main(args):
     error_keys["length"] = sorted(list(set([_[0] for _ in error_rates.keys()])))
     error_keys["aai"] = sorted(list(set([_[1] for _ in error_rates.keys()])))
     error_keys["cov"] = sorted(list(set([_[2] for _ in error_rates.keys()])))
-   
+
     args["aai"] = os.path.join(args["tmp"], "aai.tsv")
     if not os.path.exists(args["aai"]):
         logger.info("[4/7] Computing AAI...")
@@ -344,40 +343,34 @@ def main(args):
         rec = {}
         rec["contig_id"] = genome.id
         rec["contig_length"] = genome.length
-        
+
         if len(genome.aai) > 0:
-            
             # fetch top hit
             rec["ref_name"] = genome.aai[0]["target"]
             rec["ref_aai"] = genome.aai[0]["identity"]
             rec["ref_af"] = genome.aai[0]["percent_length"]
-            
             # get estimation error
             key1 = take_closest(error_keys["length"], genome.length)
             key2 = take_closest(error_keys["aai"], genome.aai[0]["identity"])
             key3 = take_closest(error_keys["cov"], genome.aai[0]["percent_length"])
             rec["est_error"] = error_rates[key1, key2, key3]
             rec["confidence"] = "low" if rec["est_error"] == "NA" else "high" if rec["est_error"] <= 5 else "medium" if rec["est_error"] <= 10 else "low"
-           
             # compute expected genome length
             lengths = [refs[_["target"]].length for _ in genome.aai]
             weights = [refs[_["target"]].weight * _["score"] for _ in genome.aai]
             rec["expected_length"] = sum([l * w for l, w in zip(lengths, weights)]) / sum(weights)
-            
             # estimate completness
             if genome.viral_length is not None:
                 rec["viral_length"] = genome.viral_length
                 rec["completeness"] = 100.0 * genome.viral_length / rec["expected_length"]
             else:
                 rec["completeness"] = 100.0 * genome.length / rec["expected_length"]
-            
             # summarize distribution of reference lengths within 50% of top hit
             len_75, len_25 = np.percentile(lengths, [75, 25])
             len_min, len_max = min(lengths), max(lengths)
             len_med = np.median(lengths)
             rec["ref_length_distribution"] = ",".join([str(len_min), str(len_25), str(len_med), str(len_75), str(len_max)])
             rec["ref_hits"] = len(genome.aai)
-            
         genome.rec = rec
 
     logger.info("[7/7] Writing results...")
@@ -405,4 +398,3 @@ def main(args):
     logger.info("\nDone!")
     logger.info("Run time: %s seconds" % round(time.time()-program_start,2))
     logger.info("Peak mem: %s GB" % round(utility.max_mem_usage(),2))
-

@@ -1,13 +1,13 @@
-#!/usr/bin/env python
-
 import argparse
+import csv
 import logging
 import os
-import time
-import csv
-import sys
 import string
+import sys
+import time
+
 import Bio.SeqIO
+
 from checkv import utility
 
 
@@ -188,4 +188,3 @@ def main(args):
     logger.info("\nDone!")
     logger.info("Run time: %s seconds" % round(time.time()-program_start,2))
     logger.info("Peak mem: %s GB" % round(utility.max_mem_usage(),2))
-

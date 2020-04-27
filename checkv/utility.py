@@ -1,32 +1,59 @@
+import bz2
+import gzip
 import logging
+import lzma
 import math
 import multiprocessing as mp
 import os
+import platform
+import resource
 import shutil
 import signal
 import subprocess as sp
 import sys
 import time
+from enum import Enum, auto
+
 import psutil
 from Bio import SeqIO
-import resource
-import platform
+
+
+class Compression(Enum):
+    gzip = auto()
+    bzip2 = auto()
+    xz = auto()
+    noncompressed = auto()
+
 
 def max_mem_usage():
     """ Return max mem usage (Gb) of self and child processes """
     max_mem_self = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     max_mem_child = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
-    if platform.system() == 'Linux':
-        return (max_mem_self + max_mem_child)/float(1e6)
+    if platform.system() == "Linux":
+        return (max_mem_self + max_mem_child) / float(1e6)
     else:
-        return (max_mem_self + max_mem_child)/float(1e9)
+        return (max_mem_self + max_mem_child) / float(1e9)
+
+
+def is_compressed(filepath):
+    """ Checks if a file is compressed (gzip, bzip2 or xz) """
+    with open(filepath, "rb") as fin:
+        signature = fin.peek(8)[:8]
+        if tuple(signature[:2]) == (0x1F, 0x8B):
+            return Compression.gzip
+        elif tuple(signature[:3]) == (0x42, 0x5A, 0x68):
+            return Compression.bzip2
+        elif tuple(signature[:7]) == (0xFD, 0x37, 0x7A, 0x58, 0x5A, 0x00, 0x00):
+            return Compression.xz
+        else:
+            return Compression.noncompressed
 
 
 def get_logger(quiet):
     if not quiet:
-        logging.basicConfig(level=logging.INFO, format='%(message)s')
+        logging.basicConfig(level=logging.INFO, format="%(message)s")
     else:
-        logging.basicConfig(level=logging.WARNING, format='%(message)s')
+        logging.basicConfig(level=logging.WARNING, format="%(message)s")
     return logging.getLogger()
 
 
@@ -61,7 +88,7 @@ def terminate_tree(pid, including_parent=True):
 
 def parallel(function, argument_list, threads):
     """ Based on: https://gist.github.com/admackin/003dd646e5fadee8b8d6 """
-    #threads = len(argument_list) ## why is this being defined again here?
+    # threads = len(argument_list) ## why is this being defined again here?
     pool = mp.Pool(threads, init_worker)
     try:
         results = []
@@ -76,7 +103,7 @@ def parallel(function, argument_list, threads):
     except KeyboardInterrupt:
         # when you want to kill everything, including this program
         # https://www.reddit.com/r/learnpython/comments/7vwyez/how_to_kill_child_processes_when_using/dtw3oh4/
-        pid=os.getpid()
+        pid = os.getpid()
         terminate_tree(pid)
 
 
@@ -92,8 +119,13 @@ def check_database(dbdir):
     if not os.path.exists(dbdir):
         msg = f"Error: database dir not found '{dbdir}'"
         sys.exit(msg)
-    files = ["genome_db/checkv_reps.dmnd", "genome_db/checkv_reps.tsv", "genome_db/checkv_error.tsv",
-             "hmm_db/checkv_hmms.tsv", "hmm_db/checkv_hmms"]
+    files = [
+        "genome_db/checkv_reps.dmnd",
+        "genome_db/checkv_reps.tsv",
+        "genome_db/checkv_error.tsv",
+        "hmm_db/checkv_hmms.tsv",
+        "hmm_db/checkv_hmms",
+    ]
     for f in files:
         path = os.path.join(dbdir, f)
         if not os.path.exists(path):
@@ -103,13 +135,22 @@ def check_database(dbdir):
 
 
 def read_fasta(path):
-    """ read fasta file and yield (header, sequence)"""
-    with open(path) as f:
-        for record in SeqIO.parse(f, "fasta"):
-            name = record.description
-            seq = str(record.seq).upper()
-            if name != "" and seq != "":
-                yield name, seq
+    """ Read fasta file and yield (header, sequence)"""
+    filepath_compression = is_compressed(path)
+    if filepath_compression == Compression.gzip:
+        f = gzip.open(path, "rt")
+    elif filepath_compression == Compression.bzip2:
+        f = bz2.open(path, "rt")
+    elif filepath_compression == Compression.xz:
+        f = lzma.open(path, "rt")
+    else:
+        f = open(path, "r")
+    for record in SeqIO.parse(f, "fasta"):
+        name = record.description
+        seq = str(record.seq).upper()
+        if name != "" and seq != "":
+            yield name, seq
+    f.close()
 
 
 def run_prodigal(out):
@@ -120,7 +161,7 @@ def run_prodigal(out):
     cmd += "1> /dev/null "
     cmd += f"2> {out}.log"
     with open(f"{out}.cmd", "w") as file:
-        file.write(cmd+"\n")
+        file.write(cmd + "\n")
     p = sp.Popen(cmd, shell=True)
     p.wait()
 
@@ -132,7 +173,7 @@ def run_dustmasker(input, out):
     cmd += f"-out {out} "
     cmd += f"2> {out}.log"
     with open(f"{out}.cmd", "w") as file:
-        file.write(cmd+"\n")
+        file.write(cmd + "\n")
     p = sp.Popen(cmd, shell=True)
     p.wait()
 
@@ -150,7 +191,7 @@ def run_diamond(out, db, faa, threads):
     cmd += f"> {out} "
     cmd += f"2> {out}.log"
     with open(f"{out}.cmd", "w") as file:
-        file.write(cmd+"\n")
+        file.write(cmd + "\n")
     p = sp.Popen(cmd, shell=True)
     p.wait()
 
@@ -166,9 +207,10 @@ def run_hmmsearch(out, db, faa, threads=1, evalue=10):
     cmd += f"{faa} "
     cmd += f"2> {out}.log "
     with open(f"{out}.cmd", "w") as file:
-        file.write(cmd+"\n")
+        file.write(cmd + "\n")
     p = sp.Popen(cmd, shell=True)
     p.wait()
+
 
 def search_hmms(tmp_dir, threads, db_dir):
     # make tmp
@@ -218,7 +260,9 @@ def search_hmms(tmp_dir, threads, db_dir):
             complete.append(x)
     num_fails = complete.count(False)
     if num_fails > 0:
-        sys.exit(f"\nError: {num_fails}/80 hmmsearch tasks failed. Program should be rerun")
+        sys.exit(
+            f"\nError: {num_fails}/80 hmmsearch tasks failed. Program should be rerun"
+        )
     # cat output
     with open(os.path.join(tmp_dir, "hmmsearch.txt"), "w") as f:
         for file in os.listdir(hmm_dir):
@@ -307,4 +351,3 @@ def parse_hmmsearch(path):
             if not line.startswith("#"):
                 values = line.split()
                 yield dict([(names[i], formats[i](values[i])) for i in range(10)])
-

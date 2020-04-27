@@ -1,12 +1,11 @@
-#!/usr/bin/env python
-
 import argparse
+import csv
 import logging
 import os
-import time
-import csv
-import sys
 import string
+import sys
+import time
+
 from checkv import utility
 
 
@@ -19,20 +18,11 @@ def fetch_arguments(parser):
     parser.set_defaults(func=main)
     parser.set_defaults(program="quality_summary")
     parser.add_argument(
-        "input",
-        type=str,
-        help="Input viral sequences in FASTA format",
+        "input", type=str, help="Input viral sequences in FASTA format",
     )
+    parser.add_argument("output", type=str, help="Output directory")
     parser.add_argument(
-        "output",
-        type=str,
-        help="Output directory"
-    )
-    parser.add_argument(
-        "--quiet",
-        action="store_true",
-        default=False,
-        help="Suppress logging messages",
+        "--quiet", action="store_true", default=False, help="Suppress logging messages",
     )
 
 
@@ -60,16 +50,17 @@ def main(args):
     p = os.path.join(args["output"], "contamination.tsv")
     if os.path.exists(p):
         for r in csv.DictReader(open(p), delimiter="\t"):
-            if "contig_id" not in r: r["contig_id"] = r["genome_id"]
+            if "contig_id" not in r:
+                r["contig_id"] = r["genome_id"]
             genome = genomes[r["contig_id"]]
-            
             if r["region_types"] == "host,viral,host":
                 genome.termini = "complete-prophage"
-            
             if "viral" in r["region_types"]:
                 if "host" in r["region_types"]:
                     genome.prophage = "Yes"
-                    genome.contamination = round(100.0 * int(r["host_length"]) / genome.length,2)
+                    genome.contamination = round(
+                        100.0 * int(r["host_length"]) / genome.length, 2
+                    )
                 else:
                     genome.prophage = "No"
                     genome.contamination = 0.0
@@ -81,12 +72,15 @@ def main(args):
     p = os.path.join(args["output"], "completeness.tsv")
     if os.path.exists(p):
         for r in csv.DictReader(open(p), delimiter="\t"):
-            if "contig_id" not in r: r["contig_id"] = r["genome_id"]
+            if "contig_id" not in r:
+                r["contig_id"] = r["genome_id"]
             genome = genomes[r["contig_id"]]
             if r["confidence"] in ["high", "medium"]:
-                genome.completeness = round(float(r["completeness"]),2)
+                genome.completeness = round(float(r["completeness"]), 2)
                 if genome.completeness > 110:
-                    genome.comment = "Warning: completeness >110%. Estimate may be unreliable."
+                    genome.comment = (
+                        "Warning: completeness >110%. Estimate may be unreliable."
+                    )
                 else:
                     genome.comment = ""
             else:
@@ -97,7 +91,8 @@ def main(args):
     p = os.path.join(args["output"], "terminal_repeats.tsv")
     if os.path.exists(p):
         for r in csv.DictReader(open(p), delimiter="\t"):
-            if "contig_id" not in r: r["contig_id"] = r["genome_id"]
+            if "contig_id" not in r:
+                r["contig_id"] = r["genome_id"]
             genome = genomes[r["contig_id"]]
             genome.termini = r["repeat_length"] + "-bp-" + r["repeat_type"]
 
@@ -116,8 +111,7 @@ def main(args):
             else:
                 genome.quality = "Complete"
                 genome.miuvig = "High-quality"
-        elif ("ITR" in genome.termini
-                or "complete-prophage" in genome.termini):
+        elif "ITR" in genome.termini or "complete-prophage" in genome.termini:
             if genome.completeness == "NA":
                 genome.quality = "Not-determined"
                 genome.miuvig = "Genome-fragment"
@@ -153,7 +147,7 @@ def main(args):
         "contamination",
         "prophage",
         "termini",
-        "comments"
+        "comments",
     ]
     out = open(args["output"] + "/quality_summary.tsv", "w")
     out.write("\t".join(header) + "\n")
@@ -167,14 +161,10 @@ def main(args):
             genome.contamination,
             genome.prophage,
             genome.termini,
-            genome.comment
+            genome.comment,
         ]
         out.write("\t".join([str(_) for _ in row]) + "\n")
 
     logger.info("\nDone!")
-    logger.info("Run time: %s seconds" % round(time.time()-program_start,2))
-    logger.info("Peak mem: %s GB" % round(utility.max_mem_usage(),2))
-
-
-
-
+    logger.info("Run time: %s seconds" % round(time.time() - program_start, 2))
+    logger.info("Peak mem: %s GB" % round(utility.max_mem_usage(), 2))
