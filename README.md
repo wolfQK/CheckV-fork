@@ -76,49 +76,53 @@ Summarize CheckV output & classify contigs into quality tiers:
 checkv quality_summary test.fna checkv_out
 ```
 
-## How it works
+*For optimal results, you should always run the 4 steps in this order.*
 
-![](https://bitbucket.org/berkeleylab/checkv/raw/758a99a857ee874f273c7de326679dfdf7e38847/logo.png)
+## How it works
 
 The CheckV pipeline can be broken down into 4 main steps:
 
-A) CheckV identifies and removes non-viral regions on proviruses. Genes are first annotated based on comparison to a custom database of HMMs that are highly specific to either viral or microbial proteins. Next, the program compares the gene annotations and GC content between a pair of sliding windows that each contain up to 40 genes. This information is used to compute a score at each intergenic position and identify host-virus boundaries.
 
-B) CheckV estimates genome completeness based on comparison to a large database of complete viral genomes derived from NCBI GenBank and environmental samples (i.e. circular viral contigs from metagenomes, metatranscriptomes, and viromes). Completeness is computed as a simple ratio between the contig length (or viral region length for proviruses) and the expected genome length (based on the length of matched CheckV reference genomes). A confidence level for the completeness estimate is reported based on the query length and the similarity of the query to the CheckV database. (ANI: average nucleotide identity; AF: alignment fraction)
+![](https://bitbucket.org/berkeleylab/checkv/raw/85abd4dad497373fef68d9239749871548a9bdc0/pipeline.png)
 
-C) Closed genomes are identified based either on direct terminal repeats (DTRs; indicating a circular sequence), flanking virus-host boundaries (indicating a complete prophage), or inverted terminal repeats (ITRs; believed to facilitate circularization and recombination). Whenever possible, these predictions are validated based on the estimated completeness obtained in B (e.g. completeness >90%). DTRs are the most reliable and most common indicator of complete genomes.
 
-D) Based on the results of A-C, CheckV generates a report file and assigns query contigs to one of five quality tiers: complete, high-quality (>90% completeness), medium-quality (50-90% completeness), low-quality (<50% completeness), or undetermined quality.
+**A: Remove host contamination.** CheckV identifies and removes non-viral regions on proviruses. Genes are first annotated based on comparison to a custom database of HMMs that are highly specific to either viral or microbial proteins. Next, the program compares the gene annotations and GC content between a pair of sliding windows that each contain up to 40 genes. This information is used to compute a score at each intergenic position and identify host-virus boundaries.
+
+**B: Estimate genome completeness.** CheckV estimates genome completeness based on comparison to a large database of complete viral genomes derived from NCBI GenBank and environmental samples (i.e. circular viral contigs from metagenomes, metatranscriptomes, and viromes). Completeness is computed as a simple ratio between the contig length (or viral region length for proviruses) and the expected genome length (based on the length of matched CheckV reference genomes). A confidence level for the completeness estimate is reported based on the query length and the similarity of the query to the CheckV database. (ANI: average nucleotide identity; AF: alignment fraction)
+
+**C: Predict closed genomes.** Closed genomes are identified based either on direct terminal repeats (DTRs; indicating a circular sequence), flanking virus-host boundaries (indicating a complete prophage), or inverted terminal repeats (ITRs; believed to facilitate circularization and recombination). Whenever possible, these predictions are validated based on the estimated completeness obtained in B (e.g. completeness >90%). DTRs are the most reliable and most common indicator of complete genomes.
+
+**D: Summarize quality.** Based on the results of A-C, CheckV generates a report file and assigns query contigs to one of five quality tiers: complete, high-quality (>90% completeness), medium-quality (50-90% completeness), low-quality (<50% completeness), or undetermined quality.
 
 
 ## Frequently asked questions
 
-<b>Q: Why is the estimated completeness >100%?</b> 
+**Q: Why is the estimated completeness >100%?**  
 A: This occurs when the genome length of matched reference genomes is greater than that of your query. This can happen due to: 1) natural variation in genome length, 2) assembly errors in which the query sequence represents multiple concatenated copies of the viral genome, 3) instances where the query contains an undetected host region, or 4) instances where the matched reference genome is a false positive (i.e. an incomplete genome fragment)  
 
-<b>Q: Why does my circular contig have <100% estimated completeness?</b>   
-A: If the estimated completeness is close to 100% (e.g. 90-110%) then the query is likely complete. However sometimes incomplete genome fragments may contain a direct terminal repeat (DTR), in which we should expect their estimated completeness to be <90%, and sometimes much less. In other cases, the contig will truly be circular, but the estimated completeness is incorrect. This may also happen if the query a complete segment of a multipartite genome (common for RNA viruses). By default, CheckV uses the 90% completeness cutoff for verification, but a user may wish to make their own judgement in these ambiguous cases.  
+**Q: Why does my circular contig have <100% estimated completeness?**   
+A: If the estimated completeness is close to 100% (e.g. 90-110%) then the query is likely complete. However sometimes incomplete genome fragments may contain a direct terminal repeat (DTR), in which case we should expect their estimated completeness to be <90%, and sometimes much less. In other cases, the contig will truly be circular, but the estimated completeness is incorrect. This may also happen if the query a complete segment of a multipartite genome (common for RNA viruses). By default, CheckV uses the 90% completeness cutoff for verification, but a user may wish to make their own judgement in these ambiguous cases.  
 
-<b>Q: Why is my circular contig predicted as a provirus?</b>  
-A: CheckV classified a sequence as a provirus if it is contains a host region (usually occuring on one just side of the sequence). A circularized sequence represents a complete viral genome, to these predictions are at odds with eachother and indicate either a false positive circular prediction, or a false positive provirus prediction. By default, CheckV considers these complete genomes, but a user may wish to make their own judgement in these ambiguous cases.  
+**Q: Why is my circular contig predicted as a provirus?**  
+A: CheckV classifies a sequence as a provirus if it is contains a host region (usually occuring on one just side of the sequence). A circularized sequence represents a complete viral genome, so these predictions are at odds with eachother and indicate either a false positive circular prediction, or a false positive provirus prediction. By default, CheckV considers these complete genomes, but a user may wish to make their own judgement in these ambiguous cases.  
 
-<b>Q: How should I handle putative "closed genomes" with no completeless estimate?</b>   
+**Q: How should I handle putative "closed genomes" with no completeless estimate?**   
 A: In some cases, you won't be able to verify the completeness of a sequence with terminal repeats or provirus integration sites. Circularity (based on direct terminal repeats) is a fairly reliable indicator (>90% of the time) and can likely be trusted with no completeness estimate. However, complete proviruses and ITRs are much less reliable indicators, and therefore require >90% estimated completeness.  
 
-<b>Q: Why is my sequence considered "high-quality" when it has a high contamination?</b>   
+**Q: Why is my sequence considered "high-quality" when it has high contamination?**   
 A: CheckV determines sequence quality solely based on completeness. Host contamination is easily removed, so is not factored into these quality tiers.  
 
-<b>Q: Why is my contig classified as "undetermined quality"?</b>  
+**Q: Why is my contig classified as "undetermined quality"?**  
 A: This happens when the sequence doesn't match any CheckV reference genome with high enough similarity to confidently estimate completeness. There are a few explanations for this, in order of likely frequency: 1) your contig is very short, and by chance it does not share any genes with a CheckV reference, 2) your contig is from a very novel virus that is distantly related to all genomes in the CheckV database, 3) your contig is not a virus at all and so doesn't match any of the references.   
 
-<b>Q: How should I handle sequences with "undetermined quality"?</b>  
-A: While it is not possible to estimate completeness for these, you may choose to still analyze sequence above a certain length (e.g. >30 kb). If you have knowledge about the viral clade, then this information can be taken into account (e.g. keep >5 kb sequences from Microviridae). Or you can use these sequences in analyses that don't require high-quality genomes.  
+**Q: How should I handle sequences with "undetermined quality"?**  
+A: While it is not possible to estimate completeness for these, you may choose to still analyze sequences above a certain length (e.g. >30 kb). If you have knowledge about the viral clade, then this information can be taken into account (e.g. keep >5 kb sequences from *Microviridae*). Or you can use these sequences in analyses that don't require high-quality genomes.  
 
-<b>Q: I performed binning and generated viral MAGs. Can I use CheckV on these?</b>  
+**Q: I performed binning and generated viral MAGs. Can I use CheckV on these?**  
 A: CheckV can estimate completeness but not contamination for these. Additionally, you'll need to concatentate the contigs from each MAG into a single sequence prior to running CheckV.
 
-<b>Q: Can I apply CheckV to eukaryotic viruses?</b>  
+**Q: Can I apply CheckV to eukaryotic viruses?**  
 A: Probably, but this has not been tested. The reference database includes a large number of genomes and HMMs that should match eukaryotic genomes. However, CheckV may report a completeness <90% if your genome is a single segment of a segmented viral genome. CheckV may also classify your sequence as a provirus if it contains a large island of metabolic genes commonly found in bacteria/archaea.
 
-<b>Q: Can I use CheckV to predict (pro)viruses from whole (meta)genomes?</b>  
+**Q: Can I use CheckV to predict (pro)viruses from whole (meta)genomes?**  
 A: Possibly, though this has not been tested. 
