@@ -1,4 +1,4 @@
-![](https://bitbucket.org/berkeleylab/checkv/raw/758a99a857ee874f273c7de326679dfdf7e38847/logo.png)
+![](https://bitbucket.org/berkeleylab/checkv/raw/6d4448f738ac8549551c8ef9511afb05bc394813/logo.png)
 
 Assessing the quality of metagenome-assembled viral genomes
 
