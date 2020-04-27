@@ -1,14 +1,13 @@
-#!/usr/bin/env python
-
 import argparse
 import csv
 import logging
 import os
+import shutil
 import subprocess as sp
 import time
-import shutil
 
 import numpy as np
+
 from checkv import utility
 
 
@@ -26,15 +25,9 @@ def fetch_arguments(parser):
     parser.set_defaults(func=main)
     parser.set_defaults(program="contamination")
     parser.add_argument(
-        "input",
-        type=str,
-        help="Input nucleotide sequences in FASTA format",
+        "input", type=str, help="Input nucleotide sequences in FASTA format",
     )
-    parser.add_argument(
-        "output",
-        type=str,
-        help="Output directory"
-    )
+    parser.add_argument("output", type=str, help="Output directory")
     parser.add_argument(
         "-d",
         dest="db",
@@ -58,18 +51,12 @@ def fetch_arguments(parser):
         help="Overwrite existing intermediate files. By default CheckV continues where program left off",
     )
     parser.add_argument(
-        "--quiet",
-        action="store_true",
-        default=False,
-        help="Suppress logging messages",
+        "--quiet", action="store_true", default=False, help="Suppress logging messages",
     )
     parser.add_argument(
-        "--exclude",
-        type=str,
-        required=False,
-        metavar="PATH",
-        help=argparse.SUPPRESS,
+        "--exclude", type=str, required=False, metavar="PATH", help=argparse.SUPPRESS,
     )
+
 
 def compute_gc(x):
     return 100.0 * (x.count("G") + x.count("C")) / len(x)
@@ -299,7 +286,7 @@ def main(args):
     hmm_info = {}
     p = os.path.join(args["db"], "hmm_db/checkv_hmms.tsv")
     for r in csv.DictReader(open(p), delimiter="\t"):
-        r["score_cutoff"] = max([float(r["score_cutoff"]), 25.0]) # min cutoff == 25 bits
+        r["score_cutoff"] = max([float(r["score_cutoff"]), 25.0])  # min cutoff == 25 bits
         hmm_info[r["hmm"]] = r
     if args["exclude"]:
         for l in open(args["exclude"]):
@@ -365,8 +352,12 @@ def main(args):
         host_length = sum(r["length"] for r in genome.regions if r["type"] == "host")
         region_types = ",".join([r["type"] for r in genome.regions])
         region_lengths = ",".join([str(r["length"]) for r in genome.regions])
-        region_coords = ",".join([str(r["start_pos"])+"-"+str(r["end_pos"]) for r in genome.regions])
-        region_genes = ",".join([str(r["start_gene"]+1)+"-"+str(r["end_gene"]) for r in genome.regions])
+        region_coords = ",".join(
+            [str(r["start_pos"]) + "-" + str(r["end_pos"]) for r in genome.regions]
+        )
+        region_genes = ",".join(
+            [str(r["start_gene"] + 1) + "-" + str(r["end_gene"]) for r in genome.regions]
+        )
         row = [genome.id, genome.length, viral_length, host_length]
         row += [len(genome.genes), genome.count_viral, genome.count_host]
         row += [region_types, region_lengths, region_coords, region_genes]
@@ -374,17 +365,33 @@ def main(args):
 
     with open(os.path.join(args["tmp"], "gene_features.tsv"), "w") as out:
         header = ["contig_id", "gene_num", "start", "end", "strand", "hmm_cat", "gc"]
-        out.write("\t".join(header)+"\n")
+        out.write("\t".join(header) + "\n")
         for genome in genomes.values():
             for gene_id in genome.genes:
                 gene = genes[gene_id]
                 num = gene_id.split("_")[-1]
-                row = [genome.id, num, gene.start, gene.end, gene.strand, gene.cat, round(gene.gc,1)]
-                out.write("\t".join([str(_) for _ in row])+"\n")
+                row = [
+                    genome.id,
+                    num,
+                    gene.start,
+                    gene.end,
+                    gene.strand,
+                    gene.cat,
+                    round(gene.gc, 1),
+                ]
+                out.write("\t".join([str(_) for _ in row]) + "\n")
 
     with open(os.path.join(args["tmp"], "gene_annotations.tsv"), "w") as out:
-        header = ["contig_id", "gene_num", "target_hmm", "hmm_db", "hmm_cat", "target_score", "target_evalue"]
-        out.write("\t".join(header)+"\n")
+        header = [
+            "contig_id",
+            "gene_num",
+            "target_hmm",
+            "hmm_db",
+            "hmm_cat",
+            "target_score",
+            "target_evalue",
+        ]
+        out.write("\t".join(header) + "\n")
         for genome in genomes.values():
             for gene_id in genome.genes:
                 gene = genes[gene_id]
@@ -396,11 +403,8 @@ def main(args):
                     score = gene.hmm_hit["score"]
                     eval = gene.hmm_hit["eval"]
                     row = [genome.id, num, hmm, db, cat, score, eval]
-                    out.write("\t".join([str(_) for _ in row])+"\n")
+                    out.write("\t".join([str(_) for _ in row]) + "\n")
 
     logger.info("\nDone!")
-    logger.info("Run time: %s seconds" % round(time.time()-program_start,2))
-    logger.info("Peak mem: %s GB" % round(utility.max_mem_usage(),2))
-
-
-
+    logger.info("Run time: %s seconds" % round(time.time() - program_start, 2))
+    logger.info("Peak mem: %s GB" % round(utility.max_mem_usage(), 2))
