@@ -83,7 +83,7 @@ checkv quality_summary test.fna checkv_out
 The CheckV pipeline can be broken down into 4 main steps:
 
 
-![](https://bitbucket.org/berkeleylab/checkv/raw/85abd4dad497373fef68d9239749871548a9bdc0/pipeline.png)
+![](https://bitbucket.org/berkeleylab/checkv/raw/56a82c12b624933f7cd374d352ba24533d280575/pipeline.png)
 
 
 **A: Remove host contamination.** CheckV identifies and removes non-viral regions on proviruses. Genes are first annotated based on comparison to a custom database of HMMs that are highly specific to either viral or microbial proteins. Next, the program compares the gene annotations and GC content between a pair of sliding windows that each contain up to 40 genes. This information is used to compute a score at each intergenic position and identify host-virus boundaries.
