@@ -1,9 +1,9 @@
 ![](https://bitbucket.org/berkeleylab/checkv/raw/6d4448f738ac8549551c8ef9511afb05bc394813/logo.png)
  
  
-### CheckV is a fully automated command-line pipeline for assessing the quality of metagenome-assembled viral genomes, including identification of host contamination for integrated proviruses, estimating completeness for genome fragments, and identification of closed genomes.  
+#### CheckV is a fully automated command-line pipeline for assessing the quality of metagenome-assembled viral genomes, including identification of host contamination for integrated proviruses, estimating completeness for genome fragments, and identification of closed genomes.  
 
-### The pipeline can be broken down into 4 main steps:    
+#### The pipeline can be broken down into 4 main steps:    
 
 ![](https://bitbucket.org/berkeleylab/checkv/raw/56a82c12b624933f7cd374d352ba24533d280575/pipeline.png)
 
