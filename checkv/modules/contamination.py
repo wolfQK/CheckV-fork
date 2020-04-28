@@ -334,6 +334,25 @@ def main(args):
         genome.regions = define_regions(genome, genes, win_size=40, min_host_fract=0.30, gc_weight=0.02, delta_cutoff=1.2)
 
     logger.info("[8/8] Writing results...")
+
+    out = open(os.path.join(args["output"], "cleaned_contigs.fna"), "w")
+    for genome in genomes.values():
+        num_viral = len([r for r in genome.regions if r["type"]=="viral"])
+        num_host = len([r for r in genome.regions if r["type"]=="host"])
+        num_regions = len(genome.regions)
+        if num_viral == 0:
+            viral_regions = genome.regions
+        else:
+            viral_regions = [r for r in genome.regions if r["type"]=="viral"]
+        for i, r in enumerate(viral_regions):
+            if num_regions > 1:
+                header = genome.id+"_"+str(i+1)+" "+str(r["start_pos"])+"-"+str(r["end_pos"])+"/"+str(genome.length)
+                seq = genome.seq[r["start_pos"]-1:r["end_pos"]]
+            else:
+                header = genome.id+" "+str(r["start_pos"])+"-"+str(r["end_pos"])+"/"+str(genome.length)
+                seq = genome.seq
+            out.write(">"+header+"\n"+seq+"\n")
+
     out = open(os.path.join(args["output"], "contamination.tsv"), "w")
     header = ["contig_id", "contig_length", "viral_length", "host_length"]
     header += ["total_genes", "viral_genes", "host_genes"]
