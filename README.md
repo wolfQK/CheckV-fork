@@ -1,6 +1,13 @@
 ![](https://bitbucket.org/berkeleylab/checkv/raw/6d4448f738ac8549551c8ef9511afb05bc394813/logo.png)
 
-Assessing the quality of metagenome-assembled viral genomes
+CheckV is a fully automated command-line pipeline for assessing the quality of metagenome-assembled viral genomes, including identification of host contamination for integrated proviruses, estimating completeness for genome fragments, and identification of closed genomes. The pipeline can be broken down into 4 main steps:
+
+![](https://bitbucket.org/berkeleylab/checkv/raw/56a82c12b624933f7cd374d352ba24533d280575/pipeline.png)
+
+**A: Remove host contamination.** CheckV identifies and removes non-viral regions on proviruses. Genes are first annotated based on comparison to a custom database of HMMs that are highly specific to either viral or microbial proteins. Next, the program compares the gene annotations and GC content between a pair of sliding windows that each contain up to 40 genes. This information is used to compute a score at each intergenic position and identify host-virus boundaries.
+**B: Estimate genome completeness.** CheckV estimates genome completeness based on comparison to a large database of complete viral genomes derived from NCBI GenBank and environmental samples (i.e. circular viral contigs from metagenomes, metatranscriptomes, and viromes). Completeness is computed as a simple ratio between the contig length (or viral region length for proviruses) and the expected genome length (based on the length of matched CheckV reference genomes). A confidence level for the completeness estimate is reported based on the query length and the similarity of the query to the CheckV database. (ANI: average nucleotide identity; AF: alignment fraction)
+**C: Predict closed genomes.** Closed genomes are identified based either on direct terminal repeats (DTRs; indicating a circular sequence), flanking virus-host boundaries (indicating a complete prophage), or inverted terminal repeats (ITRs; believed to facilitate circularization and recombination). Whenever possible, these predictions are validated based on the estimated completeness obtained in B (e.g. completeness >90%). DTRs are the most reliable and most common indicator of complete genomes.
+**D: Summarize quality.** Based on the results of A-C, CheckV generates a report file and assigns query contigs to one of five quality tiers: complete, high-quality (>90% completeness), medium-quality (50-90% completeness), low-quality (<50% completeness), or undetermined quality.
 
 ## Installation
 
@@ -77,22 +84,6 @@ checkv quality_summary test.fna checkv_out
 ```
 
 *For optimal results, you should always run the 4 steps in this order.*
-
-## How it works
-
-The CheckV pipeline can be broken down into 4 main steps:
-
-
-![](https://bitbucket.org/berkeleylab/checkv/raw/56a82c12b624933f7cd374d352ba24533d280575/pipeline.png)
-
-
-**A: Remove host contamination.** CheckV identifies and removes non-viral regions on proviruses. Genes are first annotated based on comparison to a custom database of HMMs that are highly specific to either viral or microbial proteins. Next, the program compares the gene annotations and GC content between a pair of sliding windows that each contain up to 40 genes. This information is used to compute a score at each intergenic position and identify host-virus boundaries.
-
-**B: Estimate genome completeness.** CheckV estimates genome completeness based on comparison to a large database of complete viral genomes derived from NCBI GenBank and environmental samples (i.e. circular viral contigs from metagenomes, metatranscriptomes, and viromes). Completeness is computed as a simple ratio between the contig length (or viral region length for proviruses) and the expected genome length (based on the length of matched CheckV reference genomes). A confidence level for the completeness estimate is reported based on the query length and the similarity of the query to the CheckV database. (ANI: average nucleotide identity; AF: alignment fraction)
-
-**C: Predict closed genomes.** Closed genomes are identified based either on direct terminal repeats (DTRs; indicating a circular sequence), flanking virus-host boundaries (indicating a complete prophage), or inverted terminal repeats (ITRs; believed to facilitate circularization and recombination). Whenever possible, these predictions are validated based on the estimated completeness obtained in B (e.g. completeness >90%). DTRs are the most reliable and most common indicator of complete genomes.
-
-**D: Summarize quality.** Based on the results of A-C, CheckV generates a report file and assigns query contigs to one of five quality tiers: complete, high-quality (>90% completeness), medium-quality (50-90% completeness), low-quality (<50% completeness), or undetermined quality.
 
 
 ## Frequently asked questions
