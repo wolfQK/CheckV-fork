@@ -1,4 +1,4 @@
-from checkv.modules import contamination, completeness, terminal_repeats, quality_summary
+from checkv.modules import contamination, completeness, repeats, quality_summary
 
 try:
     from importlib import metadata

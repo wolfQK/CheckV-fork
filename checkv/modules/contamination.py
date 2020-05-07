@@ -5,9 +5,8 @@ import os
 import shutil
 import subprocess as sp
 import time
-
+import checkv
 import numpy as np
-
 from checkv import utility
 
 
@@ -273,6 +272,10 @@ def main(args):
         shutil.rmtree(args["tmp"])
     if not os.path.exists(args["tmp"]):
         os.makedirs(args["tmp"])
+
+    logger.info(f"CheckV version: {checkv.__version__}")
+    logger.info(f"Database name: {os.path.basename(args['db'])}")
+    logger.info("")
 
     logger.info("[1/8] Reading database info...")
     hmm_info = {}

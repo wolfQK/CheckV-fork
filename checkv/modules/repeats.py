@@ -5,9 +5,9 @@ import os
 import string
 import sys
 import time
-
 import Bio.SeqIO
-
+import checkv
+import numpy as np
 from checkv import utility
 
 
@@ -26,7 +26,7 @@ class TR:
 
 def fetch_arguments(parser):
     parser.set_defaults(func=main)
-    parser.set_defaults(program="terminal_repeats")
+    parser.set_defaults(program="repeats")
     parser.add_argument(
         "input",
         type=str,
@@ -36,13 +36,6 @@ def fetch_arguments(parser):
         "output",
         type=str,
         help="Output directory"
-    )
-    parser.add_argument(
-        "--min_contig_len",
-        type=int,
-        default=2000,
-        metavar="INT",
-        help="Min contig length",
     )
     parser.add_argument(
         "--min_tr_len",
@@ -118,7 +111,10 @@ def main(args):
     if not os.path.exists(args["tmp"]):
         os.makedirs(args["tmp"])
 
-    logger.info("[1/5] Reading input sequences...")
+    logger.info(f"CheckV version: {checkv.__version__}")
+    logger.info("")
+
+    logger.info("[1/6] Reading input sequences...")
     genomes = {}
     for r in Bio.SeqIO.parse(args["input"], "fasta"):
         genome = Genome()
@@ -127,7 +123,19 @@ def main(args):
         genome.length = len(genome.seq)
         genomes[genome.id] = genome
 
-    logger.info("[2/5] Finding direct/inverted terminal repeats...")
+    logger.info("[2/6] Determining genome copy number...")
+    for genome in genomes.values():
+        size = len(genome.seq)
+        counts = []
+        start = 0
+        end = min([1000, len(genome.seq)])
+        while end <= len(genome.seq):
+            counts.append(genome.seq.count(genome.seq[start:end]))
+            start += 500
+            end += 500
+        genome.avg_copies = round(np.mean(counts), 2)
+
+    logger.info("[3/6] Finding direct/inverted terminal repeats...")
     for genome in genomes.values():
         dtr = TR()
         dtr.seq = fetch_dtr(genome.seq, args["min_tr_len"])
@@ -142,7 +150,7 @@ def main(args):
         itr.dust = 0
         genome.itr = itr
 
-    logger.info("[3/5] Writing terminal repeat sequences...")
+    logger.info("[4/6] Writing terminal repeat sequences...")
     args["tr_path"] = f"{args['tmp']}/tr.fna"
     with open(args["tr_path"], "w") as f:
         for id in sorted(genomes.keys()):
@@ -152,7 +160,7 @@ def main(args):
             if genome.itr.length >= args["min_tr_len"]:
                 f.write(">ITR_" + genome.id + "\n" + genome.itr.seq + "\n")
 
-    logger.info("[4/5] Running dustmasker to check repeat sequence complexity...")
+    logger.info("[5/6] Running dustmasker to check repeat sequence complexity...")
     args["dustmaskerout"] = os.path.join(args["tmp"], "dustmasker.txt")
     utility.run_dustmasker(args["tr_path"], args["dustmaskerout"])
     for line in open(args["dustmaskerout"]):
@@ -163,27 +171,52 @@ def main(args):
         elif type == "ITR":
             genomes[genome_id].itr.dust = int(end) - int(start) + 1
 
-    logger.info("[5/5] Writing results...")
-    out = open(args["output"] + "/terminal_repeats.tsv", "w")
-    header = ["contig_id", "contig_length", "repeat_type", "repeat_length", "repeat_count", "repeat_dust_length"]
+    logger.info("[6/6] Writing results...")
+    out = open(args["output"] + "/repeats.tsv", "w")
+    header = ["contig_id", "contig_length", "genome_copies", "repeat_type", "repeat_length", "repeat_count", "repeat_dust_length", "repeat_flagged", "reason"]
     out.write("\t".join(header) + "\n")
     for genome in genomes.values():
-        if (
-            genome.length >= args["min_contig_len"]
-            and genome.dtr.length >= args["min_tr_len"]
-            and (genome.dtr.count <= args["max_tr_count"] )
-            and (100.0 * genome.dtr.dust / genome.dtr.length <= args["max_tr_dust"])
-        ):
-            row = [genome.id, genome.length, 'DTR', genome.dtr.length, genome.dtr.count, genome.dtr.dust]
-            out.write('\t'.join([str(_) for _ in row])+'\n')
-        elif (
-            genome.length >= args["min_contig_len"]
-            and genome.itr.length >= args["min_tr_len"]
-            and (genome.itr.count <= args["max_tr_count"] )
-            and (100.0 * genome.itr.dust / genome.itr.length <= args["max_tr_dust"])
-        ):
-            row = [genome.id, genome.length, 'ITR', genome.itr.length, genome.itr.count, genome.itr.dust]
-            out.write('\t'.join([str(_) for _ in row])+'\n')
+
+        if (genome.dtr.length >= args["min_tr_len"]):
+            tr_type = 'DTR'
+            tr_length = genome.dtr.length
+            tr_count = genome.dtr.count
+            tr_dust = genome.dtr.dust
+            if genome.dtr.count > args["max_tr_count"]:
+                tr_flag = 'Yes'
+                reason = 'repetetive'
+            elif 100.0 * genome.dtr.dust / genome.dtr.length > args["max_tr_dust"]:
+                tr_flag = 'Yes'
+                reason = 'low_complexity'
+            else:
+                tr_flag = 'No'
+                reason = 'NA'
+                
+        elif (genome.itr.length >= args["min_tr_len"]):
+            tr_type = 'ITR'
+            tr_length = genome.itr.length
+            tr_count = genome.itr.count
+            tr_dust = genome.itr.dust
+            if genome.itr.count > args["max_tr_count"]:
+                tr_flag = 'Yes'
+                reason = 'repetetive'
+            elif 100.0 * genome.itr.dust / genome.itr.length > args["max_tr_dust"]:
+                tr_flag = 'Yes'
+                reason = 'low_complexity'
+            else:
+                tr_flag = 'No'
+                reason = 'NA'
+                
+        else:
+            tr_type = 'NA'
+            tr_length = 'NA'
+            tr_count = 'NA'
+            tr_dust = 'NA'
+            tr_flag = 'NA'
+            reason = 'NA'
+
+        row = [genome.id, genome.length, genome.avg_copies, tr_type, tr_length, tr_count, tr_dust, tr_flag, reason]
+        out.write('\t'.join([str(_) for _ in row])+'\n')
 
     logger.info("\nDone!")
     logger.info("Run time: %s seconds" % round(time.time()-program_start,2))

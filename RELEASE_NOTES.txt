@@ -1,0 +1,19 @@
+
+Version 0.4.0 (May 6, 2020)
+* New HMM-based completeness estimation
+* New estimation of genome copy #
+* Completeness capped at 100% in quality_summary.tsv output
+* Dropped 'comments' field in quality_summary.tsv output
+* Computation of aligned fraction fixed
+* terminal_repeats module renamed to repeats (to accomonate repeat based estimation of genome copy #)
+* All TRs now reported in repeats.tsv
+* New field 'repeat_flagged' which indicates low complexity/repetetive repeats
+* Added RELEASE_NOTES.txt file
+* CheckV print program and database versions
+* CheckV checks for input files in quality_summary module
+
+Version 0.3.0 (April 27, 2020)
+* Added documentation to README.md
+* Support for compressed input files (gz, bz2, xa)
+* Param change for contamination module (win size: 35 to 40, min % host genes 20% to 30%)
+* Generate cleaned_contigs.fna

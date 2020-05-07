@@ -8,9 +8,8 @@ import shutil
 import subprocess as sp
 import sys
 import time
-
 import numpy as np
-
+import checkv
 from checkv import utility
 
 
@@ -105,6 +104,10 @@ def fetch_arguments(parser):
 
 
 def yield_query_alns(path):
+    """
+    Yields list of formatted blastp alignments per 'qname'
+    """
+    
     handle = utility.parse_blastp(path)
     alns = [next(handle)]
     query = alns[0]["qname"].rsplit("_", 1)[0]
@@ -116,125 +119,15 @@ def yield_query_alns(path):
         alns.append(r)
     yield query, alns
 
-
-def take_closest(myList, myNumber):
+def init_database(args):
     """
-    Assumes myList is sorted. Returns closest value to myNumber.
-    If two numbers are equally close, return the smallest number.
+    Initialize genes, genomes, refs, and exclude data objects
+    genes: dictionary of gene_id to gene object (from input)
+    genomes: dictionary of genome_id to genome object (from input)
+    refs: dictionary of checkv_id to genome object (from database)
+    exclude: set of user-defined checkv_ids to exclude from AAI-based estimation
     """
-    myNumber = float(myNumber)
-    pos = bisect.bisect_left(myList, float(myNumber))
-    if pos == 0:
-        return myList[0]
-    if pos == len(myList):
-        return myList[-1]
-    before = myList[pos - 1]
-    after = myList[pos]
-    if (after - myNumber) < (myNumber - before):
-        return after
-    else:
-        return before
-
-
-def compute_aai(blastp_path, out_path, genomes, refs):
-    """ Compute AAI to reference genomes
-    1. loop over alignment blocks from <blastp_path> (1 per query)
-    2. compute average aa identity to each reference genome
-    3. write all hits to disk
-    """
-    with open(out_path, "w") as out:
-        header = [
-            "query",
-            "target",
-            "aligned_genes",
-            "percent_genes",
-            "aligned_length",
-            "percent_length",
-            "identity",
-            "score",
-        ]
-        out.write("\t".join(header) + "\n")
-
-        for query, alns in yield_query_alns(blastp_path):
-
-            # get best hits for each gene to each target genome
-            hits = {}
-            for r in alns:
-                target = r["tname"].rsplit("_", 1)[0]
-                # store gene aln
-                if target not in hits:
-                    hits[target] = {}
-                if r["qname"] not in hits[target]:
-                    hits[target][r["qname"]] = r
-                elif r["score"] > hits[target][r["qname"]]["score"]:
-                    hits[target][r["qname"]] = r
-
-            # compute aai
-            aai = []
-            for target, alns in hits.items():
-                pids = [r["pid"] for r in alns.values()]
-                lens = [r["aln"] - r["gap"] for r in alns.values()]
-                aligned_length = sum(lens)
-                aligned_genes = len(alns)
-                identity = round(
-                    sum(x * y for x, y in zip(pids, lens)) / aligned_length, 2
-                )
-                percent_length = round(100.0 * aligned_length / genomes[query].protlen, 2)
-                percent_genes = round(100.0 * aligned_genes / genomes[query].genes, 2)
-                score = round(identity * aligned_length / 100, 2)
-                row = [
-                    query,
-                    target,
-                    aligned_genes,
-                    percent_genes,
-                    aligned_length,
-                    percent_length,
-                    identity,
-                    score,
-                ]
-                aai.append(row)
-            if not aai:
-                continue
-
-            # write all hits to disk
-            aai = sorted(aai, key=operator.itemgetter(-1), reverse=True)
-            top_score = max(_[-1] for _ in aai)
-            for row in aai:
-                score = row[-1]
-                out.write("\t".join([str(_) for _ in row]) + "\n")
-
-
-def main(args):
-
-    program_start = time.time()
-    logger = utility.get_logger(args["quiet"])
-    utility.check_executables(["prodigal", "diamond"])
-    args["db"] = utility.check_database(args["db"])
-    args["tmp"] = os.path.join(args["output"], "tmp")
-
-    if args["restart"] and os.path.exists(args["tmp"]):
-        shutil.rmtree(args["tmp"])
-    if not os.path.exists(args["output"]):
-        os.makedirs(args["output"])
-    if not os.path.exists(args["tmp"]):
-        os.makedirs(args["tmp"])
-
-    args["faa"] = os.path.join(args["tmp"], "proteins.faa")
-    if not os.path.exists(args["faa"]):
-        logger.info("[1/7] Calling genes with prodigal...")
-        utility.call_genes(args["input"], args["output"], args["threads"])
-    else:
-        logger.info("[1/7] Skipping gene calling...")
-
-    args["blastp"] = os.path.join(args["tmp"], "diamond.tsv")
-    if not os.path.exists(args["blastp"]):
-        logger.info("[2/7] Running DIAMOND blastp search...")
-        utility.run_diamond(args["blastp"], args["db"], args["faa"], args["threads"])
-    else:
-        logger.info("[2/7] Skipping DIAMOND blastp search...")
-
-    logger.info("[3/7] Initializing queries and database...")
-
+    
     # read fna input
     genomes = {}
     for header, seq in utility.read_fasta(args["input"]):
@@ -245,6 +138,13 @@ def main(args):
         genome.protlen = 0
         genome.viral_length = None
         genome.aai = []
+        genome.hmms = set([])
+        genome.hmm_name = None
+        genome.hmm_completeness = None
+        genome.expected_length = None
+        genome.aai_completeness = None
+        genome.aai_confidence = None
+        genome.aai_error = None
         genomes[genome.id] = genome
 
     # read input genes
@@ -291,28 +191,97 @@ def main(args):
         elif args["exclude_genbank"] and genome.type == "genbank":
             exclude.add(genome.id)
 
-    # estimated error rates for alignment cutoffs
-    error_rates = {}
-    p = os.path.join(args["db"], "genome_db/checkv_error.tsv")
-    for r in csv.DictReader(open(p), delimiter="\t"):
-        key = int(r["length"]), int(r["aai"]), int(r["cov"])
-        error_rates[key] = float(r["error"]) if int(r["count"]) > 100 else "NA"
-    error_keys = {}
-    error_keys["length"] = sorted(list(set([_[0] for _ in error_rates.keys()])))
-    error_keys["aai"] = sorted(list(set([_[1] for _ in error_rates.keys()])))
-    error_keys["cov"] = sorted(list(set([_[2] for _ in error_rates.keys()])))
+    # read hmm info
+    hmms = {}
+    p = os.path.join(args["db"], "hmm_db/genome_lengths.tsv")
+    for r in csv.DictReader(open(p), delimiter='\t'):
+        r["genomes"] = int(r["genomes"])
+        r["cv"] = float(r["cv"])
+        r["lengths"] = [int(_) for _ in r["lengths"].split(",")]
+        hmms[r["hmm"]] = r
 
-    args["aai"] = os.path.join(args["tmp"], "aai.tsv")
-    if not os.path.exists(args["aai"]):
-        logger.info("[4/7] Computing AAI...")
-        compute_aai(args["blastp"], args["aai"], genomes, refs)
-    else:
-        logger.info("[4/7] Skipping AAI computation...")
+    return genes, genomes, refs, exclude, hmms
 
-    logger.info("[5/7] Storing AAI...")
+
+def compute_aai(blastp_path, out_path, genomes, genes, refs):
+    """ Compute AAI to reference genomes
+    1. loop over alignment blocks from <blastp_path> (1 per query)
+    2. compute average aa identity to each reference genome
+    3. write all hits to disk
+    """
+    
+    with open(out_path, "w") as out:
+        header = [
+            "query",
+            "target",
+            "aligned_genes",
+            "percent_genes",
+            "aligned_length",
+            "percent_length",
+            "identity",
+            "score",
+        ]
+        out.write("\t".join(header) + "\n")
+
+        for query, alns in yield_query_alns(blastp_path):
+
+            # get best hits for each gene to each target genome
+            hits = {}
+            for r in alns:
+                target = r["tname"].rsplit("_", 1)[0]
+                # store gene aln
+                if target not in hits:
+                    hits[target] = {}
+                if r["qname"] not in hits[target]:
+                    hits[target][r["qname"]] = r
+                elif r["score"] > hits[target][r["qname"]]["score"]:
+                    hits[target][r["qname"]] = r
+
+            # compute aai
+            aai = []
+            for target, alns in hits.items():
+                pids = [r["pid"] for r in alns.values()]
+                lens = [genes[_].length for _ in alns]
+                aligned_length = sum(lens)
+                aligned_genes = len(alns)
+                identity = round(
+                    sum(x * y for x, y in zip(pids, lens)) / aligned_length, 2
+                )
+                percent_length = round(100.0 * aligned_length / genomes[query].protlen, 2)
+                percent_genes = round(100.0 * aligned_genes / genomes[query].genes, 2)
+                score = round(identity * aligned_length / 100, 2)
+                row = [
+                    query,
+                    target,
+                    aligned_genes,
+                    percent_genes,
+                    aligned_length,
+                    percent_length,
+                    identity,
+                    score,
+                ]
+                aai.append(row)
+            if not aai:
+                continue
+
+            # write all hits to disk
+            aai = sorted(aai, key=operator.itemgetter(-1), reverse=True)
+            top_score = max(_[-1] for _ in aai)
+            for row in aai:
+                score = row[-1]
+                out.write("\t".join([str(_) for _ in row]) + "\n")
+
+
+def store_aai(args, genomes, exclude, refs):
+    """
+    1. Loop over AAI records from disk
+    2. Format numeric values
+    3. Filter records based on exclusion criterea
+    4. For each query, store all AAI records with alignment scores within 50% of top hit
+    """
+
     for r in csv.DictReader(open(args["aai"]), delimiter="\t"):
 
-        # format to floats
         r["identity"] = float(r["identity"])
         r["aligned_genes"] = float(r["aligned_genes"])
         r["aligned_length"] = int(r["aligned_length"])
@@ -331,47 +300,173 @@ def main(args):
             and r["percent_length"] == 100
         ):
             continue
-        elif len(genomes[r["query"]].aai) == 0:
+            
+        if len(genomes[r["query"]].aai) == 0:
             genomes[r["query"]].aai.append(r)
         else:
             top_score = genomes[r["query"]].aai[0]["score"]
             if 100.0 * (top_score - r["score"]) / top_score <= args["percent_of_top_hit"]:
                 genomes[r["query"]].aai.append(r)
 
-    logger.info("[6/7] Estimating completeness...")
-    for genome in genomes.values():
-        rec = {}
-        rec["contig_id"] = genome.id
-        rec["contig_length"] = genome.length
 
+def take_closest(myList, myNumber):
+    """
+    Assumes myList is sorted. Returns closest value to myNumber.
+    If two numbers are equally close, return the smallest number.
+    """
+    
+    myNumber = float(myNumber)
+    pos = bisect.bisect_left(myList, float(myNumber))
+    if pos == 0:
+        return myList[0]
+    if pos == len(myList):
+        return myList[-1]
+    before = myList[pos - 1]
+    after = myList[pos]
+    if (after - myNumber) < (myNumber - before):
+        return after
+    else:
+        return before
+
+
+def lookup_error_rate(genome, error_rates, error_keys):
+    """
+    Returns estimated error rate for genome based on AAI, AF, and length
+    """
+
+    key1 = take_closest(error_keys["length"], genome.length)
+    key2 = take_closest(error_keys["aai"], genome.aai[0]["identity"])
+    key3 = take_closest(error_keys["cov"], genome.aai[0]["percent_length"])
+    error = error_rates[key1, key2, key3]
+    confidence = "low" if error == "NA" else "high" if error <= 5 else "medium" if error <= 10 else "low"
+    return error, confidence
+
+
+def aai_based_completeness(args, genomes, exclude, refs):
+    """
+    0. Store error rates
+    1. Fetch top database hit
+    2. Get estimation error based on AAI and AF to top hit as well as contig length
+    3. Compute expected genome length as weighted average of all hits with an alignment score within 50% of top hit
+    4. Compute completeness as ratio of contig length (or viral length for proviruses) to expected length
+    """
+    
+    # store aai
+    store_aai(args, genomes, exclude, refs)
+    
+    # store error rates
+    error_rates = {}
+    p = os.path.join(args["db"], "genome_db/checkv_error.tsv")
+    for r in csv.DictReader(open(p), delimiter="\t"):
+        key = int(r["length"]), int(r["aai"]), int(r["cov"])
+        error_rates[key] = float(r["error"]) if int(r["count"]) > 100 else "NA"
+
+    # list keys for lookup
+    error_keys = {}
+    error_keys["length"] = sorted(list(set([_[0] for _ in error_rates.keys()])))
+    error_keys["aai"] = sorted(list(set([_[1] for _ in error_rates.keys()])))
+    error_keys["cov"] = sorted(list(set([_[2] for _ in error_rates.keys()])))
+
+    # compute completeness
+    for genome in genomes.values():
         if len(genome.aai) > 0:
-            # fetch top hit
-            rec["ref_name"] = genome.aai[0]["target"]
-            rec["ref_aai"] = genome.aai[0]["identity"]
-            rec["ref_af"] = genome.aai[0]["percent_length"]
-            # get estimation error
-            key1 = take_closest(error_keys["length"], genome.length)
-            key2 = take_closest(error_keys["aai"], genome.aai[0]["identity"])
-            key3 = take_closest(error_keys["cov"], genome.aai[0]["percent_length"])
-            rec["est_error"] = error_rates[key1, key2, key3]
-            rec["confidence"] = "low" if rec["est_error"] == "NA" else "high" if rec["est_error"] <= 5 else "medium" if rec["est_error"] <= 10 else "low"
-            # compute expected genome length
+            est_error, confidence = lookup_error_rate(genome, error_rates, error_keys)
             lengths = [refs[_["target"]].length for _ in genome.aai]
             weights = [refs[_["target"]].weight * _["score"] for _ in genome.aai]
-            rec["expected_length"] = sum([l * w for l, w in zip(lengths, weights)]) / sum(weights)
-            # estimate completness
-            if genome.viral_length is not None:
-                rec["viral_length"] = genome.viral_length
-                rec["completeness"] = 100.0 * genome.viral_length / rec["expected_length"]
-            else:
-                rec["completeness"] = 100.0 * genome.length / rec["expected_length"]
-            # summarize distribution of reference lengths within 50% of top hit
-            len_75, len_25 = np.percentile(lengths, [75, 25])
-            len_min, len_max = min(lengths), max(lengths)
-            len_med = np.median(lengths)
-            rec["ref_length_distribution"] = ",".join([str(len_min), str(len_25), str(len_med), str(len_75), str(len_max)])
-            rec["ref_hits"] = len(genome.aai)
-        genome.rec = rec
+            genome.expected_length = sum([l * w for l, w in zip(lengths, weights)]) / sum(weights)
+            query_length = genome.viral_length if genome.viral_length is not None else genome.length
+            genome.aai_completeness = 100.0 * query_length / genome.expected_length
+            genome.aai_confidence = confidence
+            genome.aai_error = est_error
+
+def hmm_based_completeness(args, genomes, hmms):
+    """
+    1. Store HMM information (name, genome lengths, CV)
+    2. List HMMs hitting each genome
+    3. Identify the HMM whose database targets display the least genome size variation (i.e. smallest CV)
+    4. Compare the contig length (or viral region ro proviruses) to the database target lengths
+    5. Identify the completeness value such that the contig length is longer than 95% of database targets
+    """
+
+    # list hmms hitting each genome
+    p = os.path.join(args["tmp"], "gene_annotations.tsv")
+    for r in csv.DictReader(open(p), delimiter="\t"):
+        if r["target_hmm"] in hmms and hmms[r["target_hmm"]]["genomes"] >= 10:
+            genomes[r["contig_id"]].hmms.add(r["target_hmm"])
+
+    # estimate minimum completeness
+    for genome in genomes.values():
+    
+        # pick hmm for each query with lowest cv
+        genome.hmms = list(genome.hmms)
+        if len(genome.hmms) == 0: continue
+        cvs = [hmms[_]["cv"] for _ in genome.hmms]
+        hmm = [hmm for cv, hmm in sorted(zip(cvs, genome.hmms))][0]
+        query_length = genome.viral_length if genome.viral_length is not None else genome.length
+
+        # get minimum estimated completeness with 95% confidence
+        comp = None
+        for comp in range(0,99,5)[::-1]:
+            lengths = [l * (comp/100.0) for l in hmms[hmm]["lengths"]]
+            percentile = sum([1.0 for l in lengths if query_length > l])/hmms[hmm]["genomes"]
+            if percentile > 0.95: break
+
+        # store results
+        genome.hmm_name = hmm
+        genome.hmm_completeness = comp
+
+def main(args):
+
+    program_start = time.time()
+    logger = utility.get_logger(args["quiet"])
+    utility.check_executables(["prodigal", "diamond"])
+    args["db"] = utility.check_database(args["db"])
+    args["tmp"] = os.path.join(args["output"], "tmp")
+
+    if args["restart"] and os.path.exists(args["tmp"]):
+        shutil.rmtree(args["tmp"])
+    if not os.path.exists(args["output"]):
+        os.makedirs(args["output"])
+    if not os.path.exists(args["tmp"]):
+        os.makedirs(args["tmp"])
+
+    logger.info(f"CheckV version: {checkv.__version__}")
+    logger.info(f"Database name: {os.path.basename(args['db'])}")
+    logger.info("")
+
+    args["faa"] = os.path.join(args["tmp"], "proteins.faa")
+    if not os.path.exists(args["faa"]):
+        logger.info("[1/7] Calling genes with prodigal...")
+        utility.call_genes(args["input"], args["output"], args["threads"])
+    else:
+        logger.info("[1/7] Skipping gene calling...")
+
+    logger.info("[2/7] Initializing queries and database...")
+    genes, genomes, refs, exclude, hmms = init_database(args)
+
+    args["blastp"] = os.path.join(args["tmp"], "diamond.tsv")
+    if not os.path.exists(args["blastp"]):
+        logger.info("[3/7] Running DIAMOND blastp search...")
+        utility.run_diamond(args["blastp"], args["db"], args["faa"], args["threads"])
+    else:
+        logger.info("[3/7] Skipping DIAMOND blastp search...")
+
+    args["aai"] = os.path.join(args["tmp"], "aai.tsv")
+    if not os.path.exists(args["aai"]):
+        logger.info("[4/7] Computing AAI...")
+        compute_aai(args["blastp"], args["aai"], genomes, genes, refs)
+    else:
+        logger.info("[4/7] Skipping AAI computation...")
+
+    logger.info("[5/7] Running AAI based completeness estimation...")
+    aai_based_completeness(args, genomes, exclude, refs)
+
+    annotation_path = os.path.join(args["tmp"], "gene_annotations.tsv")
+    if not os.path.exists(annotation_path):
+        logger.info("[6/7] Skipping HMM based completeness estimation: requires output from 'checkv contamination'")
+    else:
+        logger.info("[6/7] Running HMM based completeness estimation...")
+        hmm_based_completeness(args, genomes, hmms)
 
     logger.info("[7/7] Writing results...")
     p = os.path.join(args["output"], "completeness.tsv")
@@ -379,19 +474,47 @@ def main(args):
         "contig_id",
         "contig_length",
         "viral_length",
-        "expected_length",
-        "completeness",
-        "confidence",
-        "ref_name",
-        "ref_aai",
-        "ref_af",
-        "ref_hits",
-        "ref_length_distribution"
+        "aai_expected_length",
+        "aai_completeness",
+        "aai_confidence",
+        "aai_error",
+        "aai_num_hits",
+        "aai_top_hit",
+        "aai_id",
+        "aai_af",
+        "hmm_completeness",
+        "hmm_name",
+        "hmm_ref_genomes",
+        "hmm_avg_length",
+        "hmm_cv_length"
         ]
     with open(p, "w") as out:
         out.write("\t".join(fields) + "\n")
         for genome in genomes.values():
-            row = [str(genome.rec[f]) if f in genome.rec else 'NA' for f in fields]
+
+            rec = {}
+            rec["contig_id"] = genome.id
+            rec["contig_length"] = genome.length
+            rec["viral_length"] = genome.viral_length
+            
+            rec["aai_expected_length"] = genome.expected_length
+            rec["aai_completeness"] = genome.aai_completeness
+            rec["aai_confidence"] = genome.aai_confidence
+            rec["aai_error"] = genome.aai_error
+            rec["aai_num_hits"] = len(genome.aai)
+            if len(genome.aai) > 0:
+                rec["aai_top_hit"] = genome.aai[0]["target"]
+                rec["aai_id"] = genome.aai[0]["identity"]
+                rec["aai_af"] = genome.aai[0]["percent_length"]
+
+            rec["hmm_completeness"] = genome.hmm_completeness
+            rec["hmm_name"] = genome.hmm_name
+            if genome.hmm_name:
+                rec["hmm_ref_genomes"] = hmms[genome.hmm_name]["genomes"]
+                rec["hmm_avg_length"] = round(np.mean(hmms[genome.hmm_name]["lengths"]),1)
+                rec["hmm_cv_length"] = hmms[genome.hmm_name]["cv"]
+
+            row = [str(rec[f]) if f in rec and rec[f] is not None else 'NA' for f in fields]
             out.write("\t".join(row) + "\n")
 
     # done!
