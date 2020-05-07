@@ -55,6 +55,9 @@ def main(args):
         genome.termini = "NA"
         genome.contamination = "NA"
         genome.prophage = "NA"
+        genome.total_genes = "NA"
+        genome.viral_genes = "NA"
+        genome.host_genes = "NA"
         genome.completeness = "NA"
         genome.method = "NA"
         genomes[genome.id] = genome
@@ -64,6 +67,11 @@ def main(args):
         logger.info("[2/6] Reading results from contamination module...")
         for r in csv.DictReader(open(p), delimiter="\t"):
             genome = genomes[r["contig_id"]]
+            
+            # num genes
+            genome.total_genes = r["total_genes"]
+            genome.viral_genes = r["viral_genes"]
+            genome.host_genes = r["host_genes"]
             
             # complete prophage
             if r["region_types"] == "host,viral,host":
@@ -82,9 +90,10 @@ def main(args):
                 genome.contamination = 0.0
 
             # no viral region
-            # contamination could be 100% or 0%: leave this up to user
+            # contamination could be 100% or 0%
             else:
                 genome.prophage = "No"
+                genome.contamination = 0.0
     else:
         logger.info("[2/6] Skipping contamination due to missing input file...")
 
@@ -106,7 +115,7 @@ def main(args):
                 genome.method = "HMM-based"
 
     logger.info("[4/6] Reading results from repeats module...")
-    p = os.path.join(args["output"], "terminal_repeats.tsv")
+    p = os.path.join(args["output"], "repeats.tsv")
     if os.path.exists(p):
         for r in csv.DictReader(open(p), delimiter="\t"):
             if "contig_id" not in r: r["contig_id"] = r["genome_id"]
@@ -167,10 +176,13 @@ def main(args):
         "contig_id",
         "contig_length",
         "genome_copies",
+        "gene_count",
+        "viral_genes",
+        "host_genes",
         "checkv_quality",
         "miuvig_quality",
         "completeness",
-        "method",
+        "completeness_method",
         "contamination",
         "prophage",
         "termini",
@@ -182,12 +194,16 @@ def main(args):
             genome.id,
             genome.length,
             genome.copies,
+            genome.total_genes,
+            genome.viral_genes,
+            genome.host_genes,
             genome.quality,
             genome.miuvig,
             genome.completeness,
             genome.method,
             genome.contamination,
             genome.prophage,
+
             genome.termini,
         ]
         out.write("\t".join([str(_) for _ in row]) + "\n")
