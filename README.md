@@ -44,7 +44,8 @@ The versions listed above were the ones that were properly tested. Different ver
 Whichever method you choose to install CheckV you will need to download and extract database in order to use it:
 
 ```bash
-checkv download_database ./
+wget https://portal.nersc.gov/CheckV/checkv-db-v0.6.tar.gz
+tar -zxvf checkv-db-v0.6.tar.gz
 ```
 
 Update your environment:
