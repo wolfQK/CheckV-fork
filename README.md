@@ -125,7 +125,7 @@ contig_id  | contig_length  | viral_length  | aai\_expected_length  | aai_comple
 |---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|
 1  | 9837  | 5713  | 53242.8  | 10.7  | high  | 3.7  | 10  | DTR_517157  | 78.5  | 34.6  | 5  | 3300001592@Draft_10000123@Draft_1000012363  | 164  | 44645  | 0.152  | 
 2  | 39498  | 39498  | 37309  | 105.8  | medium  | 7.7  | 11  | DTR_357456  | 45.18  | 30.46  | 75  | 3300001729@JGI24651J20071_1000011@JGI24651J20071_100001152  | 277  | 40578.1  | 0.145  | 
-3  | 49521  | 49521  | 44960.1401784973  | 110.1  | low  | 10.2  | 17  | DTR_091230  | 39.74  | 19.54  | 80  | VOG00187  | 496  | 48703.6  | 0.117  | 
+3  | 49521  | 49521  | 44960.1  | 110.1  | low  | 10.2  | 17  | DTR_091230  | 39.74  | 19.54  | 80  | VOG00187  | 496  | 48703.6  | 0.117  | 
 4  | 23404  | NA  | NA  | NA  | NA  | NA  | 0  | NA  | NA  | NA  | NA  | NA  | NA  | NA  | NA  | 
 
 In the example, above there are results for 4 viral contigs:  
@@ -143,7 +143,7 @@ contig_id  | 	contig_length  | 	viral_length  | host_length  | total_genes  | vi
 |---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------
 1  | 	23404  | 	0  | 	0  | 	48  | 	0  | 0  | unclassified  | 23404  | 1-23404  | 1-48  
 2  | 13497  | 13497  | 0  | 9  | 1  | 0  | viral  | 497 | 1-13497  | 1-9  | 
-3  | 	9837  | 	5713  | 	4124  | 	14  | 4  | 2  | host,viral  | 41245713  | 1-4124,4125-9837  | 1-6,7-14  | 
+3  | 	9837  | 	5713  | 	4124  | 	14  | 4  | 2  | host,viral  | 4124,5713  | 1-4124,4125-9837  | 1-6,7-14  | 
 4  | 	81346  | 	0  | 	81346  | 	104  | 3  | 12  | host  | 81346  | 1-81346  | 1-104  | 
 
 In the example, above there are results for 4 viral contigs:  
@@ -169,8 +169,8 @@ In the example, above there are results for 5 viral contigs:
 
 * The first viral contig has a direct terminal repeat of 33 bp
 * The second viral contig has an inverted direct terminal repeat of 55 bp
-* The third viral contig has DTR of 20 bp. However the 20-bp repeat occurs 11 times on the 14 kb contig, suggesting it is a repetetive element and does not indicate a complete genome and is flagged. This will not appear in the quality_summary.tsv output
-* The fourth viral contig has DTR of 45 bp. However 40/45-bp as classified as low complexity by dustmasker (e.g. AAAAA...). This will not appear in the quality_summary.tsv output
+* The third viral contig has DTR of 20 bp. However the 20-bp repeat occurs 11 times on the 14 kb contig, suggesting it is a repetetive element rather than a complete genome. This contig is flagged and will not appear in the quality_summary.tsv output
+* The fourth viral contig has DTR of 45 bp. However 40/45-bp are classified as low complexity by dustmasker (e.g. AAAAA...). This will not appear in the quality_summary.tsv output
 * The fifth viral contig has a genome_copies value of 2.10. This is calcuated by counting 1 kb sequences across the contig. This value suggests the contig represents two of the exact same viral genomes. Though rare, it's thought that these can occur due to assembly errors.
 
 ## Frequently asked questions
