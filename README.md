@@ -1,6 +1,5 @@
 ![](https://bitbucket.org/berkeleylab/checkv/raw/6d4448f738ac8549551c8ef9511afb05bc394813/logo.png)
 
- 
 CheckV is a fully automated command-line pipeline for assessing the quality of metagenome-assembled viral genomes, including identification of host contamination for integrated proviruses, estimating completeness for genome fragments, and identification of closed genomes.
 
 The pipeline can be broken down into 4 main steps:
@@ -45,8 +44,7 @@ The versions listed above were the ones that were properly tested. Different ver
 Whichever method you choose to install CheckV you will need to download and extract database in order to use it:
 
 ```bash
-wget https://portal.nersc.gov/CheckV/checkv-db-v0.6.tar.gz
-tar -zxvf checkv-db-v0.6.tar.gz
+checkv download_database ./
 ```
 
 Update your environment:

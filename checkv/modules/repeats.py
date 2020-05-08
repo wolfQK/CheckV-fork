@@ -6,8 +6,8 @@ import string
 import sys
 import time
 import Bio.SeqIO
-import checkv
 import numpy as np
+import checkv
 from checkv import utility
 
 
@@ -28,21 +28,11 @@ def fetch_arguments(parser):
     parser.set_defaults(func=main)
     parser.set_defaults(program="repeats")
     parser.add_argument(
-        "input",
-        type=str,
-        help="Input viral sequences in FASTA format",
+        "input", type=str, help="Input viral sequences in FASTA format",
     )
+    parser.add_argument("output", type=str, help="Output directory")
     parser.add_argument(
-        "output",
-        type=str,
-        help="Output directory"
-    )
-    parser.add_argument(
-        "--min_tr_len",
-        type=int,
-        default=20,
-        metavar="INT",
-        help="Min length of TR",
+        "--min_tr_len", type=int, default=20, metavar="INT", help="Min length of TR",
     )
     parser.add_argument(
         "--max_tr_count",
@@ -59,10 +49,7 @@ def fetch_arguments(parser):
         help="Longest low complexity region per TR, as %% of TR length",
     )
     parser.add_argument(
-        "--quiet",
-        action="store_true",
-        default=False,
-        help="Suppress logging messages",
+        "--quiet", action="store_true", default=False, help="Suppress logging messages",
     )
 
 
@@ -80,7 +67,7 @@ def fetch_dtr(seq, min_length=20):
 
 
 def reverse_complement(seq):
-    if sys.version_info > (3,0):
+    if sys.version_info > (3, 0):
         trans = str.maketrans("ACTG", "TGAC")
     else:
         trans = string.maketrans("ACTG", "TGAC")
@@ -92,13 +79,14 @@ def fetch_itr(seq, min_len=20, max_len=1000):
     # see if minimal substring occurs at end
     if seq[:min_len] == rev[:min_len]:
         # extend to maximum substring, up to <max_len>
-        i = min_len+1
+        i = min_len + 1
         while seq[:i] == rev[:i] and i <= max_len:
             i += 1
-        return seq[:i - 1]
+        return seq[: i - 1]
     # no match
     else:
         return ""
+
 
 def main(args):
 
@@ -111,8 +99,7 @@ def main(args):
     if not os.path.exists(args["tmp"]):
         os.makedirs(args["tmp"])
 
-    logger.info(f"CheckV version: {checkv.__version__}")
-    logger.info("")
+    logger.info(f"CheckV version: {checkv.__version__}\n")
 
     logger.info("[1/6] Reading input sequences...")
     genomes = {}
@@ -173,51 +160,72 @@ def main(args):
 
     logger.info("[6/6] Writing results...")
     out = open(args["output"] + "/repeats.tsv", "w")
-    header = ["contig_id", "contig_length", "genome_copies", "repeat_type", "repeat_length", "repeat_count", "repeat_dust_length", "repeat_flagged", "reason"]
+    header = [
+        "contig_id",
+        "contig_length",
+        "genome_copies",
+        "repeat_type",
+        "repeat_length",
+        "repeat_count",
+        "repeat_dust_length",
+        "repeat_flagged",
+        "reason",
+    ]
     out.write("\t".join(header) + "\n")
     for genome in genomes.values():
 
-        if (genome.dtr.length >= args["min_tr_len"]):
-            tr_type = 'DTR'
+        if genome.dtr.length >= args["min_tr_len"]:
+            tr_type = "DTR"
             tr_length = genome.dtr.length
             tr_count = genome.dtr.count
             tr_dust = genome.dtr.dust
             if genome.dtr.count > args["max_tr_count"]:
-                tr_flag = 'Yes'
-                reason = 'repetetive'
+                tr_flag = "Yes"
+                reason = "repetetive"
             elif 100.0 * genome.dtr.dust / genome.dtr.length > args["max_tr_dust"]:
-                tr_flag = 'Yes'
-                reason = 'low_complexity'
+                tr_flag = "Yes"
+                reason = "low_complexity"
             else:
-                tr_flag = 'No'
-                reason = 'NA'
-                
-        elif (genome.itr.length >= args["min_tr_len"]):
-            tr_type = 'ITR'
+                tr_flag = "No"
+                reason = "NA"
+
+        elif genome.itr.length >= args["min_tr_len"]:
+            tr_type = "ITR"
             tr_length = genome.itr.length
             tr_count = genome.itr.count
             tr_dust = genome.itr.dust
             if genome.itr.count > args["max_tr_count"]:
-                tr_flag = 'Yes'
-                reason = 'repetetive'
+                tr_flag = "Yes"
+                reason = "repetetive"
             elif 100.0 * genome.itr.dust / genome.itr.length > args["max_tr_dust"]:
-                tr_flag = 'Yes'
-                reason = 'low_complexity'
+                tr_flag = "Yes"
+                reason = "low_complexity"
             else:
-                tr_flag = 'No'
-                reason = 'NA'
-                
-        else:
-            tr_type = 'NA'
-            tr_length = 'NA'
-            tr_count = 'NA'
-            tr_dust = 'NA'
-            tr_flag = 'NA'
-            reason = 'NA'
+                tr_flag = "No"
+                reason = "NA"
 
-        row = [genome.id, genome.length, genome.avg_copies, tr_type, tr_length, tr_count, tr_dust, tr_flag, reason]
-        out.write('\t'.join([str(_) for _ in row])+'\n')
+        else:
+            tr_type = "NA"
+            tr_length = "NA"
+            tr_count = "NA"
+            tr_dust = "NA"
+            tr_flag = "NA"
+            reason = "NA"
+
+        row = [
+            genome.id,
+            genome.length,
+            genome.avg_copies,
+            tr_type,
+            tr_length,
+            tr_count,
+            tr_dust,
+            tr_flag,
+            reason,
+        ]
+        out.write("\t".join([str(_) for _ in row]) + "\n")
 
     logger.info("\nDone!")
-    logger.info("Run time: %s seconds" % round(time.time()-program_start,2))
-    logger.info("Peak mem: %s GB" % round(utility.max_mem_usage(),2))
+    logger.info("Run time: %s seconds" % round(time.time() - program_start, 2))
+    logger.info("Peak mem: %s GB" % round(utility.max_mem_usage(), 2))
+

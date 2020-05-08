@@ -431,8 +431,7 @@ def main(args):
         os.makedirs(args["tmp"])
 
     logger.info(f"CheckV version: {checkv.__version__}")
-    logger.info(f"Database name: {os.path.basename(args['db'])}")
-    logger.info("")
+    logger.info(f"Database name: {os.path.basename(args['db'])}\n")
 
     args["faa"] = os.path.join(args["tmp"], "proteins.faa")
     if not os.path.exists(args["faa"]):

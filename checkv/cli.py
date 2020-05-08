@@ -1,6 +1,5 @@
 import argparse
 import sys
-
 import checkv
 
 
@@ -10,11 +9,17 @@ def cli():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "--version",
-        action="version",
-        version=f"{parser.prog} v{checkv.__version__}"
+        "--version", action="version", version=f"{parser.prog} v{checkv.__version__}"
     )
     subparsers = parser.add_subparsers()
+
+    download_database_parser = subparsers.add_parser(
+        "download_database",
+        help="download the latest version of CheckV's database",
+        description="Download the latest version of CheckV's database",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    checkv.download_database.fetch_arguments(download_database_parser)
 
     contamination_parser = subparsers.add_parser(
         "contamination",
@@ -52,7 +57,10 @@ def cli():
         parser.print_help()
         sys.exit(0)
     elif len(sys.argv) == 2:
-        if sys.argv[1] == "repeats":
+        if sys.argv[1] == "download_database":
+            download_database_parser.print_help()
+            sys.exit(0)
+        elif sys.argv[1] == "repeats":
             repeats_parser.print_help()
             sys.exit(0)
         elif sys.argv[1] == "completeness":

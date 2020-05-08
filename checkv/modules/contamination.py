@@ -5,8 +5,8 @@ import os
 import shutil
 import subprocess as sp
 import time
-import checkv
 import numpy as np
+import checkv
 from checkv import utility
 
 
@@ -96,7 +96,7 @@ def annotate_genes(hmm_info, genomes, genes, args):
 
 
 def compute_delta(my_genes, s1, e1, s2, e2, gc_weight):
-    
+
     # extend windows to ensure at least 1 annotated gene
     if all([g.cat == 0 for g in my_genes[s1:e1]]):
         for j in range(0, s1)[::-1]:
@@ -139,11 +139,10 @@ def compute_delta(my_genes, s1, e1, s2, e2, gc_weight):
         "win2_fract_host": 1.0 * len([_ for _ in v2 if _ == -1]) / len(win2),
     }
 
-    return (d)
+    return d
 
-def define_regions(
-    genome, genes, win_size, gc_weight, delta_cutoff, min_host_fract
-):
+
+def define_regions(genome, genes, win_size, gc_weight, delta_cutoff, min_host_fract):
     """
     1. Score each possible breakpoint using combination of viral annotations and GC content
     2. Identify breakpoints. See code below for list of rules for this process
@@ -175,7 +174,10 @@ def define_regions(
         elif d["v1_len"] + d["v2_len"] < 4:
             continue
         # % host genes in both windows
-        elif d["win1_fract_host"] < min_host_fract and d["win2_fract_host"] < min_host_fract:
+        elif (
+            d["win1_fract_host"] < min_host_fract
+            and d["win2_fract_host"] < min_host_fract
+        ):
             continue
 
         # add first breakpoint
@@ -210,7 +212,7 @@ def define_regions(
             # same delta, positive, virus-host --> use right-most boundary
             elif abs(d["delta"]) == abs(breaks[-1]["delta"]) and d["delta"] > 0:
                 breaks[-1] = d
-    
+
     # 3. identify viral/host regions
     regions = []
     for d in breaks:
@@ -274,8 +276,7 @@ def main(args):
         os.makedirs(args["tmp"])
 
     logger.info(f"CheckV version: {checkv.__version__}")
-    logger.info(f"Database name: {os.path.basename(args['db'])}")
-    logger.info("")
+    logger.info(f"Database name: {os.path.basename(args['db'])}\n")
 
     logger.info("[1/8] Reading database info...")
     hmm_info = {}
@@ -334,27 +335,52 @@ def main(args):
 
     logger.info("[7/8] Identifying host regions...")
     for genome in genomes.values():
-        genome.regions = define_regions(genome, genes, win_size=40, min_host_fract=0.30, gc_weight=0.02, delta_cutoff=1.2)
+        genome.regions = define_regions(
+            genome,
+            genes,
+            win_size=40,
+            min_host_fract=0.30,
+            gc_weight=0.02,
+            delta_cutoff=1.2,
+        )
 
     logger.info("[8/8] Writing results...")
 
     out = open(os.path.join(args["output"], "cleaned_contigs.fna"), "w")
     for genome in genomes.values():
-        num_viral = len([r for r in genome.regions if r["type"]=="viral"])
-        num_host = len([r for r in genome.regions if r["type"]=="host"])
+        num_viral = len([r for r in genome.regions if r["type"] == "viral"])
+        num_host = len([r for r in genome.regions if r["type"] == "host"])
         num_regions = len(genome.regions)
         if num_viral == 0:
             viral_regions = genome.regions
         else:
-            viral_regions = [r for r in genome.regions if r["type"]=="viral"]
+            viral_regions = [r for r in genome.regions if r["type"] == "viral"]
         for i, r in enumerate(viral_regions):
             if num_regions > 1:
-                header = genome.id+"_"+str(i+1)+" "+str(r["start_pos"])+"-"+str(r["end_pos"])+"/"+str(genome.length)
-                seq = genome.seq[r["start_pos"]-1:r["end_pos"]]
+                header = (
+                    genome.id
+                    + "_"
+                    + str(i + 1)
+                    + " "
+                    + str(r["start_pos"])
+                    + "-"
+                    + str(r["end_pos"])
+                    + "/"
+                    + str(genome.length)
+                )
+                seq = genome.seq[r["start_pos"] - 1 : r["end_pos"]]
             else:
-                header = genome.id+" "+str(r["start_pos"])+"-"+str(r["end_pos"])+"/"+str(genome.length)
+                header = (
+                    genome.id
+                    + " "
+                    + str(r["start_pos"])
+                    + "-"
+                    + str(r["end_pos"])
+                    + "/"
+                    + str(genome.length)
+                )
                 seq = genome.seq
-            out.write(">"+header+"\n"+seq+"\n")
+            out.write(">" + header + "\n" + seq + "\n")
 
     out = open(os.path.join(args["output"], "contamination.tsv"), "w")
     header = ["contig_id", "contig_length", "viral_length", "host_length"]

@@ -1,4 +1,10 @@
-from checkv.modules import contamination, completeness, repeats, quality_summary
+from checkv.modules import (
+    download_database,
+    contamination,
+    completeness,
+    repeats,
+    quality_summary,
+)
 
 try:
     from importlib import metadata

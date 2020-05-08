@@ -37,12 +37,13 @@ def main(args):
         os.makedirs(args["tmp"])
 
     path = os.path.join(args["output"], "completeness.tsv")
-    if not os.path.exists(path): sys.exit(f"Error: input file does not exist: {path}\n")
+    if not os.path.exists(path):
+        sys.exit(f"Error: input file does not exist: {path}\n")
     path = os.path.join(args["output"], "repeats.tsv")
-    if not os.path.exists(path): sys.exit(f"Error: input file does not exist: {path}\n")
+    if not os.path.exists(path):
+        sys.exit(f"Error: input file does not exist: {path}\n")
 
-    logger.info(f"CheckV version: {checkv.__version__}")
-    logger.info("")
+    logger.info(f"CheckV version: {checkv.__version__}\n")
 
     logger.info("[1/6] Reading input sequences...")
     genomes = {}
@@ -67,23 +68,23 @@ def main(args):
         logger.info("[2/6] Reading results from contamination module...")
         for r in csv.DictReader(open(p), delimiter="\t"):
             genome = genomes[r["contig_id"]]
-            
+
             # num genes
             genome.total_genes = r["total_genes"]
             genome.viral_genes = r["viral_genes"]
             genome.host_genes = r["host_genes"]
-            
+
             # complete prophage
             if r["region_types"] == "host,viral,host":
                 genome.termini = "complete-prophage"
-        
+
             # partial prophage
             if "viral" in r["region_types"] and "host" in r["region_types"]:
                 genome.prophage = "Yes"
                 genome.contamination = round(
                     100.0 * int(r["host_length"]) / genome.length, 2
                 )
-            
+
             # entirely viral
             elif "viral" in r["region_types"] and "host" not in r["region_types"]:
                 genome.prophage = "No"
@@ -102,8 +103,9 @@ def main(args):
     if os.path.exists(p):
         for r in csv.DictReader(open(p), delimiter="\t"):
             genome = genomes[r["contig_id"]]
-            if "hmm_completness" in r: r["hmm_completeness"] = r["hmm_completness"] ## temp fix
-            
+            if "hmm_completness" in r:
+                r["hmm_completeness"] = r["hmm_completness"]  ## temp fix
+
             # Med/High-confidence AAI-based estimate
             if r["aai_confidence"] in ["high", "medium"]:
                 genome.completeness = min([round(float(r["aai_completeness"]), 2), 100.0])
@@ -118,7 +120,8 @@ def main(args):
     p = os.path.join(args["output"], "repeats.tsv")
     if os.path.exists(p):
         for r in csv.DictReader(open(p), delimiter="\t"):
-            if "contig_id" not in r: r["contig_id"] = r["genome_id"]
+            if "contig_id" not in r:
+                r["contig_id"] = r["genome_id"]
             genome = genomes[r["contig_id"]]
             genome.copies = r["genome_copies"]
             if r["repeat_type"] != "NA" and r["repeat_flagged"] == "No":
@@ -203,7 +206,6 @@ def main(args):
             genome.method,
             genome.contamination,
             genome.prophage,
-
             genome.termini,
         ]
         out.write("\t".join([str(_) for _ in row]) + "\n")
