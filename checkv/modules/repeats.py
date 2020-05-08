@@ -179,10 +179,10 @@ def main(args):
             tr_length = genome.dtr.length
             tr_count = genome.dtr.count
             tr_dust = genome.dtr.dust
-            if genome.dtr.count > args["max_tr_count"]:
+            if tr_count > args["max_tr_count"]:
                 tr_flag = "Yes"
                 reason = "repetetive"
-            elif 100.0 * genome.dtr.dust / genome.dtr.length > args["max_tr_dust"]:
+            elif 100.0 * tr_dust / tr_length > args["max_tr_dust"]:
                 tr_flag = "Yes"
                 reason = "low_complexity"
             else:
@@ -194,10 +194,10 @@ def main(args):
             tr_length = genome.itr.length
             tr_count = genome.itr.count
             tr_dust = genome.itr.dust
-            if genome.itr.count > args["max_tr_count"]:
+            if tr_count > args["max_tr_count"]:
                 tr_flag = "Yes"
                 reason = "repetetive"
-            elif 100.0 * genome.itr.dust / genome.itr.length > args["max_tr_dust"]:
+            elif 100.0 * tr_dust / tr_length > args["max_tr_dust"]:
                 tr_flag = "Yes"
                 reason = "low_complexity"
             else:

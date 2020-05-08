@@ -27,15 +27,9 @@ def fetch_arguments(parser):
     parser.set_defaults(func=main)
     parser.set_defaults(program="completeness")
     parser.add_argument(
-        "input",
-        type=str,
-        help="Input nucleotide sequences in FASTA format",
+        "input", type=str, help="Input nucleotide sequences in FASTA format",
     )
-    parser.add_argument(
-        "output",
-        type=str,
-        help="Output directory"
-    )
+    parser.add_argument("output", type=str, help="Output directory")
     parser.add_argument(
         "-d",
         dest="db",
@@ -59,47 +53,25 @@ def fetch_arguments(parser):
         help="Overwrite existing intermediate files. By default CheckV continues where program left off",
     )
     parser.add_argument(
-        "--percent_of_top_hit",
-        type=float,
-        default=50,
-        help=argparse.SUPPRESS,
+        "--percent_of_top_hit", type=float, default=50, help=argparse.SUPPRESS,
     )
     parser.add_argument(
-        "--max_aai",
-        type=float,
-        default=None,
-        help=argparse.SUPPRESS,
+        "--max_aai", type=float, default=None, help=argparse.SUPPRESS,
     )
     parser.add_argument(
-        "--exclude_identical",
-        action="store_true",
-        default=False,
-        help=argparse.SUPPRESS
+        "--exclude_identical", action="store_true", default=False, help=argparse.SUPPRESS
     )
     parser.add_argument(
-        "--exclude_list",
-        type=str,
-        default=None,
-        metavar="PATH",
-        help=argparse.SUPPRESS
+        "--exclude_list", type=str, default=None, metavar="PATH", help=argparse.SUPPRESS
     )
     parser.add_argument(
-        "--exclude_circular",
-        action="store_true",
-        default=False,
-        help=argparse.SUPPRESS
+        "--exclude_circular", action="store_true", default=False, help=argparse.SUPPRESS
     )
     parser.add_argument(
-        "--exclude_genbank",
-        action="store_true",
-        default=False,
-        help=argparse.SUPPRESS
+        "--exclude_genbank", action="store_true", default=False, help=argparse.SUPPRESS
     )
     parser.add_argument(
-        "--quiet",
-        action="store_true",
-        default=False,
-        help="Suppress logging messages",
+        "--quiet", action="store_true", default=False, help="Suppress logging messages",
     )
 
 
@@ -107,7 +79,7 @@ def yield_query_alns(path):
     """
     Yields list of formatted blastp alignments per 'qname'
     """
-    
+
     handle = utility.parse_blastp(path)
     alns = [next(handle)]
     query = alns[0]["qname"].rsplit("_", 1)[0]
@@ -119,6 +91,7 @@ def yield_query_alns(path):
         alns.append(r)
     yield query, alns
 
+
 def init_database(args):
     """
     Initialize genes, genomes, refs, and exclude data objects
@@ -127,7 +100,7 @@ def init_database(args):
     refs: dictionary of checkv_id to genome object (from database)
     exclude: set of user-defined checkv_ids to exclude from AAI-based estimation
     """
-    
+
     # read fna input
     genomes = {}
     for header, seq in utility.read_fasta(args["input"]):
@@ -162,7 +135,7 @@ def init_database(args):
     p = os.path.join(args["output"], "contamination.tsv")
     if os.path.exists(p):
         for r in csv.DictReader(open(p), delimiter="\t"):
-            if "genome_id" in r: ## temporary fix due to changing field format
+            if "genome_id" in r:  ## temporary fix due to changing field format
                 r["contig_id"] = r["genome_id"]
             if "viral" in r["region_types"]:
                 genomes[r["contig_id"]].viral_length = int(r["viral_length"])
@@ -177,7 +150,9 @@ def init_database(args):
         genome.id = r["checkv_id"]
         genome.length = int(r["length"])
         genome.type = r["type"]
-        genome.weight = 1 if r["type"] == "circular" else 2 if r["type"] == "genbank" else None
+        genome.weight = (
+            1 if r["type"] == "circular" else 2 if r["type"] == "genbank" else None
+        )
         refs[genome.id] = genome
 
     # exclude references
@@ -194,7 +169,7 @@ def init_database(args):
     # read hmm info
     hmms = {}
     p = os.path.join(args["db"], "hmm_db/genome_lengths.tsv")
-    for r in csv.DictReader(open(p), delimiter='\t'):
+    for r in csv.DictReader(open(p), delimiter="\t"):
         r["genomes"] = int(r["genomes"])
         r["cv"] = float(r["cv"])
         r["lengths"] = [int(_) for _ in r["lengths"].split(",")]
@@ -209,7 +184,7 @@ def compute_aai(blastp_path, out_path, genomes, genes, refs):
     2. compute average aa identity to each reference genome
     3. write all hits to disk
     """
-    
+
     with open(out_path, "w") as out:
         header = [
             "query",
@@ -300,7 +275,7 @@ def store_aai(args, genomes, exclude, refs):
             and r["percent_length"] == 100
         ):
             continue
-            
+
         if len(genomes[r["query"]].aai) == 0:
             genomes[r["query"]].aai.append(r)
         else:
@@ -314,7 +289,7 @@ def take_closest(myList, myNumber):
     Assumes myList is sorted. Returns closest value to myNumber.
     If two numbers are equally close, return the smallest number.
     """
-    
+
     myNumber = float(myNumber)
     pos = bisect.bisect_left(myList, float(myNumber))
     if pos == 0:
@@ -338,7 +313,15 @@ def lookup_error_rate(genome, error_rates, error_keys):
     key2 = take_closest(error_keys["aai"], genome.aai[0]["identity"])
     key3 = take_closest(error_keys["cov"], genome.aai[0]["percent_length"])
     error = error_rates[key1, key2, key3]
-    confidence = "low" if error == "NA" else "high" if error <= 5 else "medium" if error <= 10 else "low"
+    confidence = (
+        "low"
+        if error == "NA"
+        else "high"
+        if error <= 5
+        else "medium"
+        if error <= 10
+        else "low"
+    )
     return error, confidence
 
 
@@ -350,10 +333,10 @@ def aai_based_completeness(args, genomes, exclude, refs):
     3. Compute expected genome length as weighted average of all hits with an alignment score within 50% of top hit
     4. Compute completeness as ratio of contig length (or viral length for proviruses) to expected length
     """
-    
+
     # store aai
     store_aai(args, genomes, exclude, refs)
-    
+
     # store error rates
     error_rates = {}
     p = os.path.join(args["db"], "genome_db/checkv_error.tsv")
@@ -362,10 +345,11 @@ def aai_based_completeness(args, genomes, exclude, refs):
         error_rates[key] = float(r["error"]) if int(r["count"]) > 100 else "NA"
 
     # list keys for lookup
-    error_keys = {}
-    error_keys["length"] = sorted(list(set([_[0] for _ in error_rates.keys()])))
-    error_keys["aai"] = sorted(list(set([_[1] for _ in error_rates.keys()])))
-    error_keys["cov"] = sorted(list(set([_[2] for _ in error_rates.keys()])))
+    error_keys = {
+        "length": sorted(list({_[0] for _ in error_rates})),
+        "aai": sorted(list({_[1] for _ in error_rates})),
+        "cov": sorted(list({_[2] for _ in error_rates})),
+    }
 
     # compute completeness
     for genome in genomes.values():
@@ -373,11 +357,16 @@ def aai_based_completeness(args, genomes, exclude, refs):
             est_error, confidence = lookup_error_rate(genome, error_rates, error_keys)
             lengths = [refs[_["target"]].length for _ in genome.aai]
             weights = [refs[_["target"]].weight * _["score"] for _ in genome.aai]
-            genome.expected_length = sum([l * w for l, w in zip(lengths, weights)]) / sum(weights)
-            query_length = genome.viral_length if genome.viral_length is not None else genome.length
+            genome.expected_length = sum(l * w for l, w in zip(lengths, weights)) / sum(
+                weights
+            )
+            query_length = (
+                genome.viral_length if genome.viral_length is not None else genome.length
+            )
             genome.aai_completeness = 100.0 * query_length / genome.expected_length
             genome.aai_confidence = confidence
             genome.aai_error = est_error
+
 
 def hmm_based_completeness(args, genomes, hmms):
     """
@@ -396,24 +385,32 @@ def hmm_based_completeness(args, genomes, hmms):
 
     # estimate minimum completeness
     for genome in genomes.values():
-    
+
         # pick hmm for each query with lowest cv
         genome.hmms = list(genome.hmms)
-        if len(genome.hmms) == 0: continue
+        if genome.hmms != 0:
+            continue
         cvs = [hmms[_]["cv"] for _ in genome.hmms]
         hmm = [hmm for cv, hmm in sorted(zip(cvs, genome.hmms))][0]
-        query_length = genome.viral_length if genome.viral_length is not None else genome.length
+        query_length = (
+            genome.viral_length if genome.viral_length is not None else genome.length
+        )
 
         # get minimum estimated completeness with 95% confidence
         comp = None
-        for comp in range(0,99,5)[::-1]:
-            lengths = [l * (comp/100.0) for l in hmms[hmm]["lengths"]]
-            percentile = sum([1.0 for l in lengths if query_length > l])/hmms[hmm]["genomes"]
-            if percentile > 0.95: break
+        for comp in range(0, 99, 5)[::-1]:
+            lengths = [l * (comp / 100.0) for l in hmms[hmm]["lengths"]]
+            percentile = (
+                sum(1.0 for l in lengths if query_length > l) / hmms[hmm]["genomes"]
+            )
+
+            if percentile > 0.95:
+                break
 
         # store results
         genome.hmm_name = hmm
         genome.hmm_completeness = comp
+
 
 def main(args):
 
@@ -434,39 +431,39 @@ def main(args):
     logger.info(f"Database name: {os.path.basename(args['db'])}\n")
 
     args["faa"] = os.path.join(args["tmp"], "proteins.faa")
-    if not os.path.exists(args["faa"]):
+    if os.path.exists(args["faa"]):
+        logger.info("[1/7] Skipping gene calling...")
+    else:
         logger.info("[1/7] Calling genes with prodigal...")
         utility.call_genes(args["input"], args["output"], args["threads"])
-    else:
-        logger.info("[1/7] Skipping gene calling...")
-
     logger.info("[2/7] Initializing queries and database...")
     genes, genomes, refs, exclude, hmms = init_database(args)
 
     args["blastp"] = os.path.join(args["tmp"], "diamond.tsv")
-    if not os.path.exists(args["blastp"]):
+    if os.path.exists(args["blastp"]):
+        logger.info("[3/7] Skipping DIAMOND blastp search...")
+    else:
         logger.info("[3/7] Running DIAMOND blastp search...")
         utility.run_diamond(args["blastp"], args["db"], args["faa"], args["threads"])
-    else:
-        logger.info("[3/7] Skipping DIAMOND blastp search...")
-
     args["aai"] = os.path.join(args["tmp"], "aai.tsv")
-    if not os.path.exists(args["aai"]):
-        logger.info("[4/7] Computing AAI...")
-        compute_aai(args["blastp"], args["aai"], genomes, genes, refs)
-    else:
+    if os.path.exists(args["aai"]):
         logger.info("[4/7] Skipping AAI computation...")
 
+    else:
+        logger.info("[4/7] Computing AAI...")
+        compute_aai(args["blastp"], args["aai"], genomes, genes, refs)
     logger.info("[5/7] Running AAI based completeness estimation...")
     aai_based_completeness(args, genomes, exclude, refs)
 
     annotation_path = os.path.join(args["tmp"], "gene_annotations.tsv")
-    if not os.path.exists(annotation_path):
-        logger.info("[6/7] Skipping HMM based completeness estimation: requires output from 'checkv contamination'")
-    else:
+    if os.path.exists(annotation_path):
         logger.info("[6/7] Running HMM based completeness estimation...")
         hmm_based_completeness(args, genomes, hmms)
 
+    else:
+        logger.info(
+            "[6/7] Skipping HMM based completeness estimation: requires output from 'checkv contamination'"
+        )
     logger.info("[7/7] Writing results...")
     p = os.path.join(args["output"], "completeness.tsv")
     fields = [
@@ -485,38 +482,39 @@ def main(args):
         "hmm_name",
         "hmm_ref_genomes",
         "hmm_avg_length",
-        "hmm_cv_length"
-        ]
+        "hmm_cv_length",
+    ]
     with open(p, "w") as out:
         out.write("\t".join(fields) + "\n")
         for genome in genomes.values():
-
-            rec = {}
-            rec["contig_id"] = genome.id
-            rec["contig_length"] = genome.length
-            rec["viral_length"] = genome.viral_length
-            
-            rec["aai_expected_length"] = genome.expected_length
-            rec["aai_completeness"] = genome.aai_completeness
-            rec["aai_confidence"] = genome.aai_confidence
-            rec["aai_error"] = genome.aai_error
-            rec["aai_num_hits"] = len(genome.aai)
+            rec = {
+                "contig_id": genome.id,
+                "contig_length": genome.length,
+                "viral_length": genome.viral_length,
+                "aai_expected_length": genome.expected_length,
+                "aai_completeness": genome.aai_completeness,
+                "aai_confidence": genome.aai_confidence,
+                "aai_error": genome.aai_error,
+                "aai_num_hits": len(genome.aai),
+            }
             if len(genome.aai) > 0:
                 rec["aai_top_hit"] = genome.aai[0]["target"]
                 rec["aai_id"] = genome.aai[0]["identity"]
                 rec["aai_af"] = genome.aai[0]["percent_length"]
-
             rec["hmm_completeness"] = genome.hmm_completeness
             rec["hmm_name"] = genome.hmm_name
             if genome.hmm_name:
                 rec["hmm_ref_genomes"] = hmms[genome.hmm_name]["genomes"]
-                rec["hmm_avg_length"] = round(np.mean(hmms[genome.hmm_name]["lengths"]),1)
+                rec["hmm_avg_length"] = round(
+                    np.mean(hmms[genome.hmm_name]["lengths"]), 1
+                )
                 rec["hmm_cv_length"] = hmms[genome.hmm_name]["cv"]
-
-            row = [str(rec[f]) if f in rec and rec[f] is not None else 'NA' for f in fields]
+            row = [
+                str(rec[f]) if f in rec and rec[f] is not None else "NA" for f in fields
+            ]
             out.write("\t".join(row) + "\n")
 
     # done!
     logger.info("\nDone!")
-    logger.info("Run time: %s seconds" % round(time.time()-program_start,2))
-    logger.info("Peak mem: %s GB" % round(utility.max_mem_usage(),2))
+    logger.info("Run time: %s seconds" % round(time.time() - program_start, 2))
+    logger.info("Peak mem: %s GB" % round(utility.max_mem_usage(), 2))
