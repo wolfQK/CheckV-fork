@@ -1,4 +1,4 @@
-Version 0.5.1 (May 11, 2010, current release)
+Version 0.5.1 (May 11, 2020, current release)
 * Added download_database module to automatically download latest version of db
 * Added update_database module to update db with new genomes
 * Added end_to_end module to run all CheckV modules
@@ -20,6 +20,6 @@ Version 0.4.0 (May 6, 2020)
 
 Version 0.3.0 (April 27, 2020)
 * Added documentation to README.md
-* Support for compressed input files (gz, bz2, xa)
+* Support for compressed input files (gz, bz2, xz)
 * Param change for contamination module (win size: 35 to 40, min % host genes 20% to 30%)
 * Generate cleaned_contigs.fna
