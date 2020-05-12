@@ -57,6 +57,15 @@ def fetch_arguments(parser):
     )
 
 
+def set_defaults(args):
+    key_values = [
+        ("exclude", None)
+        ]
+    for key, value in key_values:
+        if key not in args:
+            args[key] = value
+
+
 def compute_gc(x):
     return 100.0 * (x.count("G") + x.count("C")) / len(x)
 
@@ -264,6 +273,7 @@ def define_regions(genome, genes, win_size, gc_weight, delta_cutoff, min_host_fr
 def main(args):
 
     program_start = time.time()
+    set_defaults(args)
     logger = utility.get_logger(args["quiet"])
     utility.check_executables(["prodigal", "hmmsearch"])
     args["db"] = utility.check_database(args["db"])
@@ -275,8 +285,7 @@ def main(args):
     if not os.path.exists(args["tmp"]):
         os.makedirs(args["tmp"])
 
-    logger.info(f"CheckV version: {checkv.__version__}")
-    logger.info(f"Database name: {os.path.basename(args['db'])}\n")
+    logger.info(f"\nCheckV v{checkv.__version__}: contamination")
 
     logger.info("[1/8] Reading database info...")
     hmm_info = {}
@@ -445,6 +454,5 @@ def main(args):
                     row = [genome.id, num, hmm, db, cat, score, eval]
                     out.write("\t".join([str(_) for _ in row]) + "\n")
 
-    logger.info("\nDone!")
     logger.info("Run time: %s seconds" % round(time.time() - program_start, 2))
     logger.info("Peak mem: %s GB" % round(utility.max_mem_usage(), 2))

@@ -53,6 +53,17 @@ def fetch_arguments(parser):
     )
 
 
+def set_defaults(args):
+    key_values = [
+        ("min_tr_len", 20),
+        ("max_tr_count", 5),
+        ("max_tr_dust", 20.0)
+        ]
+    for key, value in key_values:
+        if key not in args:
+            args[key] = value
+
+
 def fetch_dtr(seq, min_length=20):
     # see if minimal substring occurs in 2nd half of seq
     substring = seq[0:min_length]
@@ -92,6 +103,7 @@ def main(args):
 
     program_start = time.time()
     logger = utility.get_logger(args["quiet"])
+    set_defaults(args)
     utility.check_executables(["dustmasker"])
     args["tmp"] = os.path.join(args["output"], "tmp")
     if not os.path.exists(args["output"]):
@@ -99,8 +111,8 @@ def main(args):
     if not os.path.exists(args["tmp"]):
         os.makedirs(args["tmp"])
 
-    logger.info(f"CheckV version: {checkv.__version__}\n")
-
+    logger.info(f"\nCheckV v{checkv.__version__}: repeats")
+    
     logger.info("[1/6] Reading input sequences...")
     genomes = {}
     for r in Bio.SeqIO.parse(args["input"], "fasta"):
@@ -225,7 +237,6 @@ def main(args):
         ]
         out.write("\t".join([str(_) for _ in row]) + "\n")
 
-    logger.info("\nDone!")
     logger.info("Run time: %s seconds" % round(time.time() - program_start, 2))
     logger.info("Peak mem: %s GB" % round(utility.max_mem_usage(), 2))
 

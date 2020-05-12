@@ -51,8 +51,8 @@ def main(args):
     if not os.path.exists(args["destination"]):
         os.makedirs(args["destination"])
 
-    logger.info(f"CheckV version: {checkv.__version__}\n")
-
+    logger.info(f"\nCheckV v{checkv.__version__}: download_database")
+    
     logger.info("[1/3] Checking latest version of CheckV's database...")
     db = DatabaseDownloader(args["destination"])
 
@@ -62,6 +62,5 @@ def main(args):
     logger.info(f"[3/3] Extracting {db.version}...")
     db.extract()
 
-    logger.info("\nDone!")
     logger.info("Run time: %s seconds" % round(time.time() - program_start, 2))
     logger.info("Peak mem: %s GB" % round(utility.max_mem_usage(), 2))

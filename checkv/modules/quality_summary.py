@@ -43,8 +43,8 @@ def main(args):
     if not os.path.exists(path):
         sys.exit(f"Error: input file does not exist: {path}\n")
 
-    logger.info(f"CheckV version: {checkv.__version__}\n")
-
+    logger.info(f"\nCheckV v{checkv.__version__}: quality_summary")
+    
     logger.info("[1/6] Reading input sequences...")
     genomes = {}
     for header, seq in utility.read_fasta(args["input"]):
@@ -53,7 +53,7 @@ def main(args):
         genome.seq = seq
         genome.length = len(seq)
         genome.copies = "NA"
-        genome.termini = "NA"
+        genome.termini = "No"
         genome.contamination = "NA"
         genome.prophage = "NA"
         genome.total_genes = "NA"
@@ -210,6 +210,5 @@ def main(args):
         ]
         out.write("\t".join([str(_) for _ in row]) + "\n")
 
-    logger.info("\nDone!")
     logger.info("Run time: %s seconds" % round(time.time() - program_start, 2))
     logger.info("Peak mem: %s GB" % round(utility.max_mem_usage(), 2))

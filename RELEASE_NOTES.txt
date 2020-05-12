@@ -1,5 +1,11 @@
+Version 0.5.0 (next release)
+* Added download_database module to automatically download latest version of db
+* Added update_database module to update db with new genomes
+* Added end_to_end module to run all CheckV modules
+* Added documentation for output files in README
+* Help text reformatted
 
-Version 0.4.0 (May 6, 2020)
+Version 0.4.0 (May 6, 2020, current release)
 * New HMM-based completeness estimation
 * New estimation of genome copy #
 * Completeness capped at 100% in quality_summary.tsv output

@@ -65,14 +65,20 @@ def fetch_arguments(parser):
         "--exclude_list", type=str, default=None, metavar="PATH", help=argparse.SUPPRESS
     )
     parser.add_argument(
-        "--exclude_circular", action="store_true", default=False, help=argparse.SUPPRESS
-    )
-    parser.add_argument(
-        "--exclude_genbank", action="store_true", default=False, help=argparse.SUPPRESS
-    )
-    parser.add_argument(
         "--quiet", action="store_true", default=False, help="Suppress logging messages",
     )
+
+
+def set_defaults(args):
+    key_values = [
+        ("percent_of_top_hit", 50),
+        ("max_aai", None),
+        ("exclude_identical", False),
+        ("exclude_list", None)
+        ]
+    for key, value in key_values:
+        if key not in args:
+            args[key] = value
 
 
 def yield_query_alns(path):
@@ -160,11 +166,6 @@ def init_database(args):
     if args["exclude_list"]:
         for l in open(args["exclude_list"]):
             exclude.add(l.rstrip())
-    for genome in refs.values():
-        if args["exclude_circular"] and genome.type == "circular":
-            exclude.add(genome.id)
-        elif args["exclude_genbank"] and genome.type == "genbank":
-            exclude.add(genome.id)
 
     # read hmm info
     hmms = {}
@@ -415,6 +416,7 @@ def hmm_based_completeness(args, genomes, hmms):
 def main(args):
 
     program_start = time.time()
+    set_defaults(args)
     logger = utility.get_logger(args["quiet"])
     utility.check_executables(["prodigal", "diamond"])
     args["db"] = utility.check_database(args["db"])
@@ -427,8 +429,7 @@ def main(args):
     if not os.path.exists(args["tmp"]):
         os.makedirs(args["tmp"])
 
-    logger.info(f"CheckV version: {checkv.__version__}")
-    logger.info(f"Database name: {os.path.basename(args['db'])}\n")
+    logger.info(f"\nCheckV v{checkv.__version__}: completeness")
 
     args["faa"] = os.path.join(args["tmp"], "proteins.faa")
     if os.path.exists(args["faa"]):
@@ -515,6 +516,5 @@ def main(args):
             out.write("\t".join(row) + "\n")
 
     # done!
-    logger.info("\nDone!")
     logger.info("Run time: %s seconds" % round(time.time() - program_start, 2))
     logger.info("Peak mem: %s GB" % round(utility.max_mem_usage(), 2))

@@ -44,58 +44,47 @@ The versions listed above were the ones that were properly tested. Different ver
 Whichever method you choose to install CheckV you will need to download and extract database in order to use it:
 
 ```bash
-wget https://portal.nersc.gov/CheckV/checkv-db-v0.6.tar.gz
-tar -zxvf checkv-db-v0.6.tar.gz
+checkv download_database <destination>
 ```
 
-Update your environment:
+Update your environment (optional):
 
 ```bash
-export CHECKVDB=/path/to/checkv-db-v0.6
+export CHECKVDB=/path/to/checkv-db
 ```
 
-If you don't want to set the environmet variable, you can still use the database through the `-d` parameter of the `contamination` and `completeness` modules.
-
+You may wish to update the dabase using your own complete genomes (optional):
+```bash
+checkv update_database <source_db> <dest_db> <genomes>
+```
 ## Quick start
 
-Navigate to CheckV test directory:
+There are two ways to run CheckV:
+
+- Using a single command to run the full pipeline:
 
 ```bash
-cd /path/to/checkv/test
+checkv end_to_end input_file.fna output_directory -t 16
 ```
 
-Identify flanking host regions on integrated prophages:
+- Using individual commands for each step in the pipeline in the following order:
 
 ```bash
-checkv contamination test.fna checkv_out -t 16
+checkv contamination input_file.fna output_directory -t 16
+checkv completeness input_file.fna output_directory -t 16
+checkv repeats input_file.fna output_directory
+checkv quality_summary input_file.fna output_directory
 ```
 
-Estimate completeness for genome fragments:
+- For a full listing of checkv programs and options, use: `checkv -h` and `checkv <program> -h`
 
-```bash
-checkv completeness test.fna checkv_out -t 16
-```
 
-Identify (possible) complete genomes with terminal:
-(this module also estimates the genome copy number; see below for details)
-
-```bash
-checkv repeats test.fna checkv_out
-```
-
-Summarize CheckV output & classify contigs into quality tiers:
-
-```bash
-checkv quality_summary test.fna checkv_out
-```
-
-*For optimal results, you should always run the 4 steps in this order.*
 
 ## Output files
 
 #### quality_summary.tsv
 
-This contains integrated results from the three main modules and should be the main output file referred to.  Below is an example to demonstrate the type of results you can expect in your data:
+This contains integrated results from the three main modules and should be the main output referred to. Below is an example to demonstrate the type of results you can expect in your data:
 
 | contig_id  | contig_length  | genome_copies  | gene_count  | viral_genes  | host_genes  | checkv_quality  | miuvig_quality  | completeness  | completeness_method  | contamination  | prophage  | termini  |  
 |---------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|
@@ -118,7 +107,6 @@ In the example, above there are results for 6 viral contigs:
 #### completeness.tsv
 
 A detailed overview of how completeness was estimated:
-
 
 contig_id  | contig_length  | viral_length  | aai\_expected_length  | aai_completeness  | aai_confidence  | aai_error  | aai\_num_hits  | aai\_top_hit  | aai_id  | aai_af  | hmm_completeness  | hmm_name  | hmm\_ref_genomes  | hmm\_avg_length  | hmm\_cv_length  | 
 |---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|

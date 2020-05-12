@@ -1,9 +1,11 @@
 from checkv.modules import (
     download_database,
+    update_database,
     contamination,
     completeness,
     repeats,
     quality_summary,
+    end_to_end,
 )
 
 try:

@@ -26,7 +26,7 @@ class Compression(Enum):
 
 
 def max_mem_usage():
-    """ Return max mem usage (Gb) of self and child processes """
+    """ Return max mem usage (GB) of self and child processes """
     max_mem_self = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     max_mem_child = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
     if platform.system() == "Linux":
