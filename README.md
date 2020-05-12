@@ -44,6 +44,13 @@ The versions listed above were the ones that were properly tested. Different ver
 Whichever method you choose to install CheckV you will need to download and extract database in order to use it:
 
 ```bash
+wget https://portal.nersc.gov/CheckV/checkv-db-v0.6.tar.gz
+tar -zxvf checkv-db-v0.6.tar.gz
+```
+
+OR (available in next release)
+
+```bash
 checkv download_database ./
 ```
 
@@ -53,19 +60,13 @@ And update your environment (optional):
 export CHECKVDB=/path/to/checkv-db
 ```
 
-Some users may wish to update the database using their own complete genomes (optional):
+Some users may wish to update the database using their own complete genomes (available in next release):
 ```bash
 checkv update_database /path/to/checkv-db /path/to/updated-checkv-db genomes.fna
 ```
 ## Quick start
 
 There are two ways to run CheckV:
-
-- Using a single command to run the full pipeline:
-
-```bash
-checkv end_to_end input_file.fna output_directory -t 16
-```
 
 - Using individual commands for each step in the pipeline in the following order:
 
@@ -75,6 +76,13 @@ checkv completeness input_file.fna output_directory -t 16
 checkv repeats input_file.fna output_directory
 checkv quality_summary input_file.fna output_directory
 ```
+
+- Using a single command to run the full pipeline (available in next release):
+
+```bash
+checkv end_to_end input_file.fna output_directory -t 16
+```
+
 
 - For a full listing of checkv programs and options, use: `checkv -h` and `checkv <program> -h`
 
