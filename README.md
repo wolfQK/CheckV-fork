@@ -12,7 +12,7 @@ The pipeline can be broken down into 4 main steps:
 
 **C: Predict closed genomes.** Closed genomes are identified based either on direct terminal repeats (DTRs; often indicating a circular sequence), flanking virus-host boundaries (indicating a complete prophage), or inverted terminal repeats (ITRs; believed to facilitate circularization and recombination). Whenever possible, these predictions are validated based on the estimated completeness obtained in B (e.g. completeness >90%). DTRs are the most reliable and most common indicator of complete genomes.
 
-**D: Summarize quality.** Based on the results of A-C, CheckV generates a report file and assigns query contigs to one of five quality tiers: complete, high-quality (>90% completeness), medium-quality (50-90% completeness), low-quality (<50% completeness), or undetermined quality. These quality tiers are consistent with and expand upon those outlined in the MIUVig standards.
+**D: Summarize quality.** Based on the results of A-C, CheckV generates a report file and assigns query contigs to one of five quality tiers: complete, high-quality (>90% completeness), medium-quality (50-90% completeness), low-quality (<50% completeness), or undetermined quality. These quality tiers are consistent with and expand upon those outlined in the MIUViG standards.
 
 ## Installation
 
