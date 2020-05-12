@@ -59,7 +59,7 @@ def main(args):
     logger.info(f"[2/3] Downloading '{db.version}'...")
     db.download()
 
-    logger.info(f"[3/3] Extracting {db.version}...")
+    logger.info(f"[3/3] Extracting '{db.version}'...")
     db.extract()
 
     logger.info("Run time: %s seconds" % round(time.time() - program_start, 2))
