@@ -4,7 +4,7 @@ CheckV is a fully automated command-line pipeline for assessing the quality of m
 
 The pipeline can be broken down into 4 main steps:
 
-![](https://bitbucket.org/berkeleylab/checkv/raw/56a82c12b624933f7cd374d352ba24533d280575/pipeline.png)
+![](https://bitbucket.org/berkeleylab/checkv/raw/657fde9b1c696185a399456fbcbb4ca82066abb6/pipeline.png)
 
 **A: Remove host contamination.** CheckV identifies and removes non-viral regions on proviruses. Genes are first annotated based on comparison to a custom database of HMMs that are highly specific to either viral or microbial proteins. Next, the program compares the gene annotations and GC content between a pair of sliding windows that each contain up to 40 genes. This information is used to compute a score at each intergenic position and identify host-virus boundaries.
 
@@ -44,18 +44,18 @@ The versions listed above were the ones that were properly tested. Different ver
 Whichever method you choose to install CheckV you will need to download and extract database in order to use it:
 
 ```bash
-checkv download_database <destination>
+checkv download_database ./
 ```
 
-Update your environment (optional):
+And update your environment (optional):
 
 ```bash
 export CHECKVDB=/path/to/checkv-db
 ```
 
-You may wish to update the dabase using your own complete genomes (optional):
+Some users may wish to update the database using their own complete genomes (optional):
 ```bash
-checkv update_database <source_db> <dest_db> <genomes>
+checkv update_database /path/to/checkv-db /path/to/updated-checkv-db genomes.fna
 ```
 ## Quick start
 
@@ -168,16 +168,16 @@ A: AAI-based completeness was designed to be very accurate and can be trusted wh
 **Q: What is the meaning of the genome_copies field?**  
 A: This is a measure of how many times the viral genome is represented in the contig. Most times this is 1.0 (or very close to 1.0). In rare cases assembly errors may occur in which the contig sequence represents multiple concatenated copies of the viral genome. In these cases genome_copies will exceed 1.0.
 
-**Q: Why does my DTR contig have <100% estimated completeness?**
+**Q: Why does my DTR contig have <100% estimated completeness?**  
 A: If the estimated completeness is close to 100% (e.g. 90-110%) then the query is likely complete. However sometimes incomplete genome fragments may contain a direct terminal repeat (DTR), in which case we should expect their estimated completeness to be <90%, and sometimes much less. In other cases, the contig will truly be circular, but the estimated completeness is incorrect. This may also happen if the query a complete segment of a multipartite genome (common for RNA viruses). By default, CheckV uses the 90% completeness cutoff for verification, but a user may wish to make their own judgement in these ambiguous cases.
 
-**Q: Why is my DTR contig predicted as a provirus?**
+**Q: Why is my DTR contig predicted as a provirus?**  
 A: CheckV classifies a sequence as a provirus if it is contains a host region (usually occuring on one just side of the sequence). A DTR sequence represents a complete viral genome, so these predictions are at odds with eachother and indicate either a false positive DTR prediction, or a false positive provirus prediction. By default, CheckV considers these complete genomes, but a user may wish to make their own judgement in these ambiguous cases.
 
-**Q: Why is my sequence considered "high-quality" when it has high contamination?**
+**Q: Why is my sequence considered "high-quality" when it has high contamination?**  
 A: CheckV determines sequence quality solely based on completeness. Host contamination is easily removed, so is not factored into these quality tiers.
 
-**Q: I performed binning and generated viral MAGs. Can I use CheckV on these?**
+**Q: I performed binning and generated viral MAGs. Can I use CheckV on these?**  
 A: CheckV can estimate completeness but not contamination for these. Additionally, you'll need to concatentate the contigs from each MAG into a single sequence prior to running CheckV.
 
 **Q: Can I apply CheckV to eukaryotic viruses?**  
