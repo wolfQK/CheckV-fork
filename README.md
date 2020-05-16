@@ -86,7 +86,10 @@ checkv end_to_end input_file.fna output_directory -t 16
 
 - For a full listing of checkv programs and options, use: `checkv -h` and `checkv <program> -h`
 
+## Known Issues (we're working on it!)
 
+* Bug in completeness module (v0.5.1) that suppresses output of HMM-based results
+* DIAMOND v0.9.30 does not work on OSX
 
 ## Output files
 
