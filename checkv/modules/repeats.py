@@ -8,6 +8,7 @@ import time
 import Bio.SeqIO
 import numpy as np
 import checkv
+import collections
 from checkv import utility
 
 
@@ -123,15 +124,15 @@ def main(args):
         genomes[genome.id] = genome
 
     logger.info("[2/6] Determining genome copy number...")
+    # at least 20 windows with max win size of 2000-bp
     for genome in genomes.values():
-        size = len(genome.seq)
         counts = []
-        start = 0
-        end = min([1000, len(genome.seq)])
+        win_size = min([int(len(genome.seq)/20), 2000])
+        start, end = 0, win_size
         while end <= len(genome.seq):
             counts.append(genome.seq.count(genome.seq[start:end]))
-            start += 500
-            end += 500
+            start += win_size
+            end += win_size
         genome.avg_copies = round(np.mean(counts), 2)
 
     logger.info("[3/6] Finding direct/inverted terminal repeats...")
@@ -149,7 +150,19 @@ def main(args):
         itr.dust = 0
         genome.itr = itr
 
-    logger.info("[4/6] Writing terminal repeat sequences...")
+    logger.info("[4/6] Determining repeat base composition...")
+    for id in sorted(genomes.keys()):
+        genome = genomes[id]
+        if len(genome.dtr.seq) >= args["min_tr_len"]:
+            mode_base, mode_count = collections.Counter(genome.dtr.seq).most_common(1)[0]
+            genome.dtr.mode_freq = 1.0*mode_count/len(genome.dtr.seq)
+            genome.dtr.n_freq = 1.0*genome.dtr.seq.count("N")/len(genome.dtr.seq)
+        if len(genome.itr.seq) >= args["min_tr_len"]:
+            mode_base, mode_count = collections.Counter(genome.itr.seq).most_common(1)[0]
+            genome.itr.mode_freq = 1.0*mode_count/len(genome.itr.seq)
+            genome.itr.n_freq = 1.0*genome.itr.seq.count("N")/len(genome.itr.seq)
+
+    logger.info("[5/6] Running dustmasker to check repeat sequence complexity...")
     args["tr_path"] = f"{args['tmp']}/tr.fna"
     with open(args["tr_path"], "w") as f:
         for id in sorted(genomes.keys()):
@@ -158,8 +171,6 @@ def main(args):
                 f.write(">DTR_" + genome.id + "\n" + genome.dtr.seq + "\n")
             if genome.itr.length >= args["min_tr_len"]:
                 f.write(">ITR_" + genome.id + "\n" + genome.itr.seq + "\n")
-
-    logger.info("[5/6] Running dustmasker to check repeat sequence complexity...")
     args["dustmaskerout"] = os.path.join(args["tmp"], "dustmasker.txt")
     utility.run_dustmasker(args["tr_path"], args["dustmaskerout"])
     for line in open(args["dustmaskerout"]):
@@ -180,18 +191,30 @@ def main(args):
         "repeat_length",
         "repeat_count",
         "repeat_dust_length",
+        "repeat_mode_base_freq",
+        "repeat_ambig_base_freq",
         "repeat_flagged",
-        "reason",
+        "flagged_reason",
+        "repeat_sequence",
     ]
     out.write("\t".join(header) + "\n")
     for genome in genomes.values():
 
         if genome.dtr.length >= args["min_tr_len"]:
             tr_type = "DTR"
+            tr_seq = genome.dtr.seq
             tr_length = genome.dtr.length
             tr_count = genome.dtr.count
             tr_dust = genome.dtr.dust
-            if tr_count > args["max_tr_count"]:
+            tr_ambig = genome.dtr.n_freq
+            tr_mode_base_freq = genome.dtr.mode_freq
+            if tr_mode_base_freq >= 0.75:
+                tr_flag = "Yes"
+                reason = "high_single_base_freq"
+            elif tr_ambig >= 0.10:
+                tr_flag = "Yes"
+                reason = "high_ambig_base_freq"
+            elif tr_count > args["max_tr_count"]:
                 tr_flag = "Yes"
                 reason = "repetetive"
             elif 100.0 * tr_dust / tr_length > args["max_tr_dust"]:
@@ -203,10 +226,19 @@ def main(args):
 
         elif genome.itr.length >= args["min_tr_len"]:
             tr_type = "ITR"
+            tr_seq = genome.itr.seq
             tr_length = genome.itr.length
             tr_count = genome.itr.count
             tr_dust = genome.itr.dust
-            if tr_count > args["max_tr_count"]:
+            tr_ambig = genome.itr.n_freq
+            tr_mode_base_freq = genome.itr.mode_freq
+            if tr_mode_base_freq >= 0.75:
+                tr_flag = "Yes"
+                reason = "high_single_base_freq"
+            elif tr_ambig >= 0.10:
+                tr_flag = "Yes"
+                reason = "high_ambig_base_freq"
+            elif tr_count > args["max_tr_count"]:
                 tr_flag = "Yes"
                 reason = "repetetive"
             elif 100.0 * tr_dust / tr_length > args["max_tr_dust"]:
@@ -218,9 +250,12 @@ def main(args):
 
         else:
             tr_type = "NA"
+            tr_seq = "NA"
             tr_length = "NA"
             tr_count = "NA"
             tr_dust = "NA"
+            tr_ambig = "NA"
+            tr_mode_base_freq = "NA"
             tr_flag = "NA"
             reason = "NA"
 
@@ -232,8 +267,11 @@ def main(args):
             tr_length,
             tr_count,
             tr_dust,
+            tr_mode_base_freq,
+            tr_ambig,
             tr_flag,
             reason,
+            tr_seq,
         ]
         out.write("\t".join([str(_) for _ in row]) + "\n")
 

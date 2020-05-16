@@ -1,3 +1,16 @@
+Version 0.6.0 (next release)
+* Bug fix in completeness module that suppressed HMM-based results
+* HMM-based completeness now reported as range: 90% confidence interval = X-Y% complete
+* Warnings added to quality_summary.tsv for range of conditions
+* ?? Change from DIAMOND v0.9.30 to v0.9.32 to support OSX
+* Minor parameter change for genome copy number estimation
+* Terminal repeat sequence included in output file (e.g. GCACTTC...)
+* Added terminal repeat metadata: ambig_freq and max_base_freq
+* Dropped automated filtering of terminal repeats: up to user to decide how to handle flagged seqs
+* Quality summary reports multiple types of termini when present (e.g. DTR & ITR on same contig)
+* cleaned_contigs.fna split into viruses.fna and proviruses.fna
+* Renamed field 'prophage' to 'provirus' in quality_summary.tsv
+
 Version 0.5.1 (May 11, 2020, current release)
 * Added download_database module to automatically download latest version of db
 * Added update_database module to update db with new genomes
