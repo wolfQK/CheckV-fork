@@ -53,7 +53,7 @@ def fetch_arguments(parser):
         help="Overwrite existing intermediate files. By default CheckV continues where program left off",
     )
     parser.add_argument(
-        "--percent_of_top_hit", type=float, default=50, help=argparse.SUPPRESS,
+        "--percent_of_top_hit", type=float, default=50.0, help=argparse.SUPPRESS,
     )
     parser.add_argument(
         "--max_aai", type=float, default=None, help=argparse.SUPPRESS,
@@ -74,8 +74,8 @@ def set_defaults(args):
         ("percent_of_top_hit", 50),
         ("max_aai", None),
         ("exclude_identical", False),
-        ("exclude_list", None)
-        ]
+        ("exclude_list", None),
+    ]
     for key, value in key_values:
         if key not in args:
             args[key] = value
@@ -389,7 +389,7 @@ def hmm_based_completeness(args, genomes, hmms):
 
         # pick hmm for each query with lowest cv
         genome.hmms = list(genome.hmms)
-        if genome.hmms != 0:
+        if len(genome.hmms) == 0:
             continue
         cvs = [hmms[_]["cv"] for _ in genome.hmms]
         hmm = [hmm for cv, hmm in sorted(zip(cvs, genome.hmms))][0]
@@ -435,7 +435,7 @@ def main(args):
     if os.path.exists(args["faa"]):
         logger.info("[1/7] Skipping gene calling...")
     else:
-        logger.info("[1/7] Calling genes with prodigal...")
+        logger.info("[1/7] Calling genes with Prodigal...")
         utility.call_genes(args["input"], args["output"], args["threads"])
     logger.info("[2/7] Initializing queries and database...")
     genes, genomes, refs, exclude, hmms = init_database(args)

@@ -311,7 +311,7 @@ def main(args):
 
     args["faa"] = os.path.join(args["tmp"], "proteins.faa")
     if not os.path.exists(args["faa"]):
-        logger.info("[3/8] Calling genes with prodigal...")
+        logger.info("[3/8] Calling genes with Prodigal...")
         utility.call_genes(args["input"], args["output"], args["threads"])
     else:
         logger.info("[3/8] Skipping gene calling...")
