@@ -70,7 +70,7 @@ def test_repeats_module():
                 assert l1 == l2
 
 
-def test_quality_summary():
+def test_quality_summary_module():
     args = {
         "input": "test/test_sequences.fna",
         "output": "test/output_files",
