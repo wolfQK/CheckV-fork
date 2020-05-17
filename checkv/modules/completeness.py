@@ -119,7 +119,8 @@ def init_database(args):
         genome.aai = []
         genome.hmms = set([])
         genome.hmm_name = None
-        genome.hmm_completeness = None
+        genome.hmm_completeness_lower = None
+        genome.hmm_completeness_upper = None
         genome.expected_length = None
         genome.aai_completeness = None
         genome.aai_confidence = None
@@ -368,14 +369,25 @@ def aai_based_completeness(args, genomes, exclude, refs):
             genome.aai_confidence = confidence
             genome.aai_error = est_error
 
+def fetch_percentile(num, lst):
+    """
+    Compute the percentile of num in lst. Example logic:
+    if num is smaller than 1st element, rank = 0, percentile = 0
+    if num is smaller than 2nd element, rank = 1, percentile = 1/len(list)
+    if num is not smaller than last element, percentile = 100
+    """
+    for rank, length in enumerate(lst):
+        if num < length:
+            return 100.0*(rank)/len(lst)
+    return 100.0
 
 def hmm_based_completeness(args, genomes, hmms):
     """
     1. Store HMM information (name, genome lengths, CV)
     2. List HMMs hitting each genome
     3. Identify the HMM whose database targets display the least genome size variation (i.e. smallest CV)
-    4. Compare the contig length (or viral region ro proviruses) to the database target lengths
-    5. Identify the completeness value such that the contig length is longer than 95% of database targets
+    4. Compare the contig length (or viral region on proviruses) to the database target lengths
+    5. Estimate the 90% confidence interval of completeness
     """
 
     # list hmms hitting each genome
@@ -397,21 +409,19 @@ def hmm_based_completeness(args, genomes, hmms):
             genome.viral_length if genome.viral_length is not None else genome.length
         )
 
-        # get minimum estimated completeness with 95% confidence
-        comp = None
-        for comp in range(0, 99, 5)[::-1]:
-            lengths = [l * (comp / 100.0) for l in hmms[hmm]["lengths"]]
-            percentile = (
-                sum(1.0 for l in lengths if query_length > l) / hmms[hmm]["genomes"]
-            )
-
-            if percentile > 0.95:
-                break
-
-        # store results
+        # rank genome based on hypothetical complenetness
+        # ranging from 1 to 100
+        x = []
+        for comp in range(0, 101, 1):
+            size = query_length * 100.0 / comp if comp > 0 else float('Inf')
+            perc = fetch_percentile(size, hmms[hmm]["lengths"])
+            x.append([comp, perc])
+        
+        # completness_lower: 95% probability true value is higher
+        # completness_upper: 95% probability true value is not higher
+        genome.hmm_completeness_lower = [comp for comp, perc in x if perc >= 95][-1]
+        genome.hmm_completeness_upper = [comp for comp, perc in x if perc >= 5][-1]
         genome.hmm_name = hmm
-        genome.hmm_completeness = comp
-
 
 def main(args):
 
@@ -437,6 +447,7 @@ def main(args):
     else:
         logger.info("[1/7] Calling genes with Prodigal...")
         utility.call_genes(args["input"], args["output"], args["threads"])
+
     logger.info("[2/7] Initializing queries and database...")
     genes, genomes, refs, exclude, hmms = init_database(args)
 
@@ -446,13 +457,14 @@ def main(args):
     else:
         logger.info("[3/7] Running DIAMOND blastp search...")
         utility.run_diamond(args["blastp"], args["db"], args["faa"], args["threads"])
+
     args["aai"] = os.path.join(args["tmp"], "aai.tsv")
     if os.path.exists(args["aai"]):
         logger.info("[4/7] Skipping AAI computation...")
-
     else:
         logger.info("[4/7] Computing AAI...")
         compute_aai(args["blastp"], args["aai"], genomes, genes, refs)
+
     logger.info("[5/7] Running AAI based completeness estimation...")
     aai_based_completeness(args, genomes, exclude, refs)
 
@@ -460,11 +472,11 @@ def main(args):
     if os.path.exists(annotation_path):
         logger.info("[6/7] Running HMM based completeness estimation...")
         hmm_based_completeness(args, genomes, hmms)
-
     else:
         logger.info(
             "[6/7] Skipping HMM based completeness estimation: requires output from 'checkv contamination'"
         )
+
     logger.info("[7/7] Writing results...")
     p = os.path.join(args["output"], "completeness.tsv")
     fields = [
@@ -479,7 +491,8 @@ def main(args):
         "aai_top_hit",
         "aai_id",
         "aai_af",
-        "hmm_completeness",
+        "hmm_completeness_lower",
+        "hmm_completeness_upper",
         "hmm_name",
         "hmm_ref_genomes",
         "hmm_avg_length",
@@ -502,7 +515,8 @@ def main(args):
                 rec["aai_top_hit"] = genome.aai[0]["target"]
                 rec["aai_id"] = genome.aai[0]["identity"]
                 rec["aai_af"] = genome.aai[0]["percent_length"]
-            rec["hmm_completeness"] = genome.hmm_completeness
+            rec["hmm_completeness_lower"] = genome.hmm_completeness_lower
+            rec["hmm_completeness_upper"] = genome.hmm_completeness_upper
             rec["hmm_name"] = genome.hmm_name
             if genome.hmm_name:
                 rec["hmm_ref_genomes"] = hmms[genome.hmm_name]["genomes"]

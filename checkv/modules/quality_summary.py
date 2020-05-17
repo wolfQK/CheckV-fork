@@ -25,6 +25,45 @@ def fetch_arguments(parser):
         "--quiet", action="store_true", default=False, help="Suppress logging messages",
     )
 
+def assign_quality_tier(genome):
+    
+    # fetch completeness
+    if genome.method == "AAI-based":
+        completeness = genome.completeness
+    elif genome.method == "HMM-based":
+        completeness = float(genome.completeness.split("-")[0])
+    else:
+        completeness = "NA"
+    
+    # assign tier ## pick up here
+    if completeness == "NA":
+        genome.quality = "Not-determined"
+        genome.miuvig = "Genome-fragment"
+    elif completeness >= 90:
+        genome.quality = "High-quality"
+        genome.miuvig = "High-quality"
+    elif completeness >= 50:
+        genome.quality = "Medium-quality"
+        genome.miuvig = "Genome-fragment"
+    elif completeness < 50:
+        genome.quality = "Low-quality"
+        genome.miuvig = "Genome-fragment"
+
+    # assign complete
+    if len(genome.termini) > 0:
+        if (genome.method == "AAI-based"
+                and completeness >= 90
+            ):
+            genome.quality = "Complete"
+            genome.miuvig = "High-quality"
+        elif (genome.method == "HMM-based"
+                and float(genome.completeness.split("-")[0]) >= 90
+            ):
+            genome.quality = "Complete"
+            genome.miuvig = "High-quality"
+        else:
+            genome.warnings.append("predicted termini not supported by estimated completeness")
+
 
 def main(args):
 
@@ -53,7 +92,6 @@ def main(args):
         genome.seq = seq
         genome.length = len(seq)
         genome.copies = "NA"
-        genome.termini = "No"
         genome.contamination = "NA"
         genome.prophage = "NA"
         genome.total_genes = "NA"
@@ -61,6 +99,8 @@ def main(args):
         genome.host_genes = "NA"
         genome.completeness = "NA"
         genome.method = "NA"
+        genome.termini = []
+        genome.warnings = []
         genomes[genome.id] = genome
 
     p = os.path.join(args["output"], "contamination.tsv")
@@ -73,10 +113,18 @@ def main(args):
             genome.total_genes = r["total_genes"]
             genome.viral_genes = r["viral_genes"]
             genome.host_genes = r["host_genes"]
+            
+            # warning
+            if int(genome.viral_genes) == 0:
+                genome.warnings.append("no viral genes detected")
+            if int(genome.host_genes) > int(genome.viral_genes) > 0:
+                genome.warnings.append("microbial genes > viral genes")
+            if r["region_types"].count("viral") > 1:
+                genome.warnings.append(">1 viral region detected")
 
             # complete prophage
             if r["region_types"] == "host,viral,host":
-                genome.termini = "complete-prophage"
+                genome.termini.append("complete-prophage")
 
             # partial prophage
             if "viral" in r["region_types"] and "host" in r["region_types"]:
@@ -103,17 +151,21 @@ def main(args):
     if os.path.exists(p):
         for r in csv.DictReader(open(p), delimiter="\t"):
             genome = genomes[r["contig_id"]]
-            if "hmm_completness" in r:
-                r["hmm_completeness"] = r["hmm_completness"]  ## temp fix
 
-            # Med/High-confidence AAI-based estimate
+            # med/high-confidence AAI-based estimate
             if r["aai_confidence"] in ["high", "medium"]:
-                genome.completeness = min([round(float(r["aai_completeness"]), 2), 100.0])
+                completeness = round(float(r["aai_completeness"]), 2)
+                genome.completeness = min([completeness, 100.0])
                 genome.method = "AAI-based"
+                
+                # completeness warning
+                if completeness >= 120:
+                    ratio = round(completeness/100,2)
+                    genome.warnings.append(f"contig {ratio}x length of matched reference")
 
             # HMM-based estimate
-            elif r["hmm_completeness"] != "NA":
-                genome.completeness = min([round(float(r["hmm_completeness"]), 2), 100.0])
+            elif r["hmm_completeness_lower"] != "NA":
+                genome.completeness = f"r['hmm_completeness_lower'].0 - r['hmm_completeness_upper'].0"
                 genome.method = "HMM-based"
 
     logger.info("[4/6] Reading results from repeats module...")
@@ -124,55 +176,20 @@ def main(args):
                 r["contig_id"] = r["genome_id"]
             genome = genomes[r["contig_id"]]
             genome.copies = r["genome_copies"]
-            if r["repeat_type"] != "NA" and r["repeat_flagged"] == "No":
-                genome.termini = r["repeat_length"] + "-bp-" + r["repeat_type"]
+            
+            # copies warning
+            if float(genome.copies) >= 1.2:
+                genome.warnings.append(f"{genome.copies} genome copies may indicate assembly artifact")
+
+            # terminal repeat
+            if r["repeat_type"] != "NA":
+                genome.termini.append(r["repeat_length"] + "-bp-" + r["repeat_type"])
+                if r["repeat_flagged"] == "Yes":
+                    genome.warnings.append(f"repeat flagged due to {r['flagged_reason']}")
 
     logger.info("[5/6] Classifying contigs into quality tiers...")
     for genome in genomes.values():
-        # DTR == complete if completeness > 90% or no AAI-based estimate
-        if "DTR" in genome.termini:
-            if genome.completeness == "NA" or genome.method == "HMM-based":
-                genome.quality = "Complete"
-                genome.miuvig = "High-quality"
-            elif genome.completeness < 50 and genome.method == "AAI-based":
-                genome.quality = "Low-quality"
-                genome.miuvig = "Genome-fragment"
-            elif genome.completeness < 90 and genome.method == "AAI-based":
-                genome.quality = "Medium-quality"
-                genome.miuvig = "Genome-fragment"
-            else:
-                genome.quality = "Complete"
-                genome.miuvig = "High-quality"
-        # ITR/prophage == complete if completeness > 90%
-        elif "ITR" in genome.termini or "complete-prophage" in genome.termini:
-            if genome.completeness == "NA":
-                genome.quality = "Not-determined"
-                genome.miuvig = "Genome-fragment"
-            elif genome.completeness < 50:
-                genome.quality = "Low-quality"
-                genome.miuvig = "Genome-fragment"
-            elif genome.completeness < 90:
-                genome.quality = "Medium-quality"
-                genome.miuvig = "Genome-fragment"
-            else:
-                genome.quality = "Complete"
-                genome.miuvig = "High-quality"
-        # high quality == completeness > 90%
-        elif genome.completeness != "NA" and genome.completeness >= 90:
-            genome.quality = "High-quality"
-            genome.miuvig = "High-quality"
-        # medium quality == completeness > 50%
-        elif genome.completeness != "NA" and genome.completeness >= 50:
-            genome.quality = "Medium-quality"
-            genome.miuvig = "Genome-fragment"
-        # low quality == completeness < 50%
-        elif genome.completeness != "NA":
-            genome.quality = "Low-quality"
-            genome.miuvig = "Genome-fragment"
-        # everything else is not determined
-        else:
-            genome.quality = "Not-determined"
-            genome.miuvig = "Genome-fragment"
+        assign_quality_tier(genome)
 
     logger.info("[6/6] Writing results...")
     header = [
@@ -187,8 +204,9 @@ def main(args):
         "completeness",
         "completeness_method",
         "contamination",
-        "prophage",
+        "provirus",
         "termini",
+        "warnings",
     ]
     out = open(args["output"] + "/quality_summary.tsv", "w")
     out.write("\t".join(header) + "\n")
@@ -206,7 +224,8 @@ def main(args):
             genome.method,
             genome.contamination,
             genome.prophage,
-            genome.termini,
+            ",".join(genome.termini),
+            "; ".join(["'"+_+"'" for _ in genome.warnings])
         ]
         out.write("\t".join([str(_) for _ in row]) + "\n")
 
