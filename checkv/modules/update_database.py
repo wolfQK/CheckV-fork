@@ -48,7 +48,7 @@ def main(args):
             sys.exit("Error: database already exists")
 
     logger.info(f"\nCheckV v{checkv.__version__}: update_database")
-    
+
     logger.info("[1/5] Copying database to new destination...")
     shutil.copytree(args["source_db"], args["dest_db"])
 

@@ -49,13 +49,13 @@ def main(args):
 
     from checkv import contamination
     contamination.main(args)
-    
+
     from checkv import completeness
     completeness.main(args)
-    
+
     from checkv import repeats
     repeats.main(args)
-    
+
     from checkv import quality_summary
     quality_summary.main(args)
 

@@ -14,7 +14,7 @@ def test_contamination_module(database):
         "input": "test/test_sequences.fna",
         "output": "test/output_files",
         "db": database,
-        "threads": 4,
+        "threads": 1,
         "restart": False,
         "quiet": False,
         "exclude": None,
@@ -24,8 +24,12 @@ def test_contamination_module(database):
         with open("test/ground_truth/contamination.tsv") as ground_truth_output:
             for l1, l2 in zip(test_output, ground_truth_output):
                 assert l1 == l2
-    with open("test/output_files/cleaned_contigs.fna") as test_output:
-        with open("test/ground_truth/cleaned_contigs.fna") as ground_truth_output:
+    with open("test/output_files/viruses.fna") as test_output:
+        with open("test/ground_truth/viruses.fna") as ground_truth_output:
+            for l1, l2 in zip(test_output, ground_truth_output):
+                assert l1 == l2
+    with open("test/output_files/proviruses.fna") as test_output:
+        with open("test/ground_truth/proviruses.fna") as ground_truth_output:
             for l1, l2 in zip(test_output, ground_truth_output):
                 assert l1 == l2
 
@@ -35,7 +39,7 @@ def test_completeness_module(database):
         "input": "test/test_sequences.fna",
         "output": "test/output_files",
         "db": database,
-        "threads": 4,
+        "threads": 1,
         "restart": False,
         "percent_of_top_hit": 50.0,
         "max_aai": None,

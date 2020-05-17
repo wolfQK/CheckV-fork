@@ -416,7 +416,7 @@ def hmm_based_completeness(args, genomes, hmms):
             size = query_length * 100.0 / comp if comp > 0 else float('Inf')
             perc = fetch_percentile(size, hmms[hmm]["lengths"])
             x.append([comp, perc])
-        
+
         # completness_lower: 95% probability true value is higher
         # completness_upper: 95% probability true value is not higher
         genome.hmm_completeness_lower = [comp for comp, perc in x if perc >= 95][-1]
