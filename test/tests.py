@@ -65,14 +65,15 @@ def test_repeats_module():
             for l1, l2 in zip(test_output, ground_truth_output):
                 assert l1 == l2
 
-# def test_quality_summary():
-#     args = {
-#         "input": "test/test_sequences.fna",
-#         "output": "test/output_files",
-#         "quiet": False,
-#     }
-#     quality_summary.main(args)
-#     with open("test/output_files/quality_summary.tsv") as test_output:
-#         with open("test/ground_truth/quality_summary.tsv") as ground_truth_output:
-#             for l1, l2 in zip(test_output, ground_truth_output):
-#                 assert l1 == l2
+
+def test_quality_summary():
+    args = {
+        "input": "test/test_sequences.fna",
+        "output": "test/output_files",
+        "quiet": False,
+    }
+    quality_summary.main(args)
+    with open("test/output_files/quality_summary.tsv") as test_output:
+        with open("test/ground_truth/quality_summary.tsv") as ground_truth_output:
+            for l1, l2 in zip(test_output, ground_truth_output):
+                assert l1 == l2
