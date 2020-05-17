@@ -21,7 +21,7 @@ programs:
     download_database   download the latest version of CheckV's database
     update_database     update CheckV's database with your own complete genomes"""
     )
-    
+
     subparsers = parser.add_subparsers(help=argparse.SUPPRESS)
 
     end_to_end_parser = subparsers.add_parser(
@@ -32,7 +32,7 @@ programs:
 \nusage: checkv end_to_end <input> <output> [options]"""
     )
     checkv.end_to_end.fetch_arguments(end_to_end_parser)
-    
+
     download_database_parser = subparsers.add_parser(
         "download_database",
         usage=argparse.SUPPRESS,
@@ -41,7 +41,7 @@ programs:
 \nusage: checkv download_database <destination>"""
     )
     checkv.download_database.fetch_arguments(download_database_parser)
-    
+
     update_database_parser = subparsers.add_parser(
         "update_database",
         usage=argparse.SUPPRESS,

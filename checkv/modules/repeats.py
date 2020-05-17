@@ -113,7 +113,7 @@ def main(args):
         os.makedirs(args["tmp"])
 
     logger.info(f"\nCheckV v{checkv.__version__}: repeats")
-    
+
     logger.info("[1/6] Reading input sequences...")
     genomes = {}
     for r in Bio.SeqIO.parse(args["input"], "fasta"):

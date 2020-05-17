@@ -26,7 +26,6 @@ def fetch_arguments(parser):
     )
 
 def assign_quality_tier(genome):
-    
     # fetch completeness
     if genome.method == "AAI-based":
         completeness = genome.completeness
@@ -34,7 +33,7 @@ def assign_quality_tier(genome):
         completeness = float(genome.completeness.split("-")[0])
     else:
         completeness = "NA"
-    
+
     # assign tier ## pick up here
     if completeness == "NA":
         genome.quality = "Not-determined"
@@ -83,7 +82,7 @@ def main(args):
         sys.exit(f"Error: input file does not exist: {path}\n")
 
     logger.info(f"\nCheckV v{checkv.__version__}: quality_summary")
-    
+
     logger.info("[1/6] Reading input sequences...")
     genomes = {}
     for header, seq in utility.read_fasta(args["input"]):
@@ -113,7 +112,7 @@ def main(args):
             genome.total_genes = r["total_genes"]
             genome.viral_genes = r["viral_genes"]
             genome.host_genes = r["host_genes"]
-            
+
             # warning
             if int(genome.viral_genes) == 0:
                 genome.warnings.append("no viral genes detected")
@@ -157,7 +156,7 @@ def main(args):
                 completeness = round(float(r["aai_completeness"]), 2)
                 genome.completeness = min([completeness, 100.0])
                 genome.method = "AAI-based"
-                
+
                 # completeness warning
                 if completeness >= 120:
                     ratio = round(completeness/100,2)
@@ -165,7 +164,7 @@ def main(args):
 
             # HMM-based estimate
             elif r["hmm_completeness_lower"] != "NA":
-                genome.completeness = f"r['hmm_completeness_lower'].0 - r['hmm_completeness_upper'].0"
+                genome.completeness = f"{r['hmm_completeness_lower']}.0 - {r['hmm_completeness_upper']}.0"
                 genome.method = "HMM-based"
 
     logger.info("[4/6] Reading results from repeats module...")
@@ -176,7 +175,7 @@ def main(args):
                 r["contig_id"] = r["genome_id"]
             genome = genomes[r["contig_id"]]
             genome.copies = r["genome_copies"]
-            
+
             # copies warning
             if float(genome.copies) >= 1.2:
                 genome.warnings.append(f"{genome.copies} genome copies may indicate assembly artifact")

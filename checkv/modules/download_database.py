@@ -52,7 +52,7 @@ def main(args):
         os.makedirs(args["destination"])
 
     logger.info(f"\nCheckV v{checkv.__version__}: download_database")
-    
+
     logger.info("[1/3] Checking latest version of CheckV's database...")
     db = DatabaseDownloader(args["destination"])
 
