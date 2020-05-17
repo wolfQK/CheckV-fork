@@ -41,17 +41,17 @@ The versions listed above were the ones that were properly tested. Different ver
 
 ### CheckV database
 
-Whichever method you choose to install CheckV you will need to download and extract database in order to use it:
+Whichever method you choose to install CheckV you will need to download the database in order to use it:
+
+```bash
+checkv download_database ./
+```
+
+Or (to download and extract manually):
 
 ```bash
 wget https://portal.nersc.gov/CheckV/checkv-db-v0.6.tar.gz
 tar -zxvf checkv-db-v0.6.tar.gz
-```
-
-OR (available in next release)
-
-```bash
-checkv download_database ./
 ```
 
 And update your environment (optional):
@@ -64,6 +64,7 @@ Some users may wish to update the database using their own complete genomes (ava
 ```bash
 checkv update_database /path/to/checkv-db /path/to/updated-checkv-db genomes.fna
 ```
+
 ## Quick start
 
 There are two ways to run CheckV:
@@ -82,7 +83,6 @@ checkv quality_summary input_file.fna output_directory
 ```bash
 checkv end_to_end input_file.fna output_directory -t 16
 ```
-
 
 - For a full listing of checkv programs and options, use: `checkv -h` and `checkv <program> -h`
 
@@ -110,10 +110,10 @@ In the example, above there are results for 6 viral contigs:
 
 * The first 23 kb contig has no completeness prediction, which is indicated by 'Not-determined' for the 'checkv_quality' field. This contig also has no viral genes identified, so there's a chance it may not even be a virus.   
 * The second 9.8 kb contig is classified as 'Low-quality' since its completeness is <50%. This is estimate is based on the 'AAI' method. Note that only either high- or medium-confidence estimates are reported in the quality_summary.tsv file. You can see 'completeness.tsv' for more details.  
-*  The third contig is considered 'Medium-quality' since its completeness is estimated to be 80%, which is based on the 'HMM' method. This means that it was too novel to estimate completeness based on AAI, but shared an HMM with CheckV reference genomes. Note that the HMM-based method may underestimate the true completeness.
-*  The fourth contig is classified as High-quality based on a completness of >90%. However, note that value of 'genome_copies' is 2.10. This indicates that the viral genome is represented multiple times in the contig. These cases are quite rare, but something to watch out for.
-*  The fifth contig is classified as Complete based on the presence of a 33-bp direct terminal repeat and has 100% completeness based on the AAI method. This sequence can condifently treated as a complete genome.
-*  The sixth contig is classified as Complete based on the presence of multiple host-virus boundaries and an estimated completeness of >90%. Complete prophages and ITRs often have estimated completeness <90%, so greater caution is needed for analying these sequences.
+* The third contig is considered 'Medium-quality' since its completeness is estimated to be 80%, which is based on the 'HMM' method. This means that it was too novel to estimate completeness based on AAI, but shared an HMM with CheckV reference genomes. Note that the HMM-based method may underestimate the true completeness.
+* The fourth contig is classified as High-quality based on a completness of >90%. However, note that value of 'genome_copies' is 2.10. This indicates that the viral genome is represented multiple times in the contig. These cases are quite rare, but something to watch out for.
+* The fifth contig is classified as Complete based on the presence of a 33-bp direct terminal repeat and has 100% completeness based on the AAI method. This sequence can condifently treated as a complete genome.
+* The sixth contig is classified as Complete based on the presence of multiple host-virus boundaries and an estimated completeness of >90%. Complete prophages and ITRs often have estimated completeness <90%, so greater caution is needed for analying these sequences.
 
 #### completeness.tsv
 
