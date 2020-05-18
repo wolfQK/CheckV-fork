@@ -8,18 +8,15 @@ import subprocess as sp
 import Bio.SeqIO
 from checkv import utility
 
+
 def fetch_arguments(parser):
     parser.set_defaults(func=main)
     parser.set_defaults(program="update_database")
     parser.add_argument(
-        "source_db",
-        type=str,
-        help="Path to current CheckV database.",
+        "source_db", type=str, help="Path to current CheckV database.",
     )
     parser.add_argument(
-        "dest_db",
-        type=str,
-        help="Path to updated CheckV database.",
+        "dest_db", type=str, help="Path to updated CheckV database.",
     )
     parser.add_argument(
         "genomes",
@@ -30,10 +27,17 @@ def fetch_arguments(parser):
         "--quiet", action="store_true", default=False, help="Suppress logging messages",
     )
     parser.add_argument(
-        "--restart", action="store_true", default=False, help="Overwrite existing database",
+        "--restart",
+        action="store_true",
+        default=False,
+        help="Overwrite existing database",
     )
     parser.add_argument(
-        "--threads", metavar="INT", type=int, default=1, help="Number of threads for Prodigal and DIAMOND",
+        "--threads",
+        metavar="INT",
+        type=int,
+        default=1,
+        help="Number of threads for Prodigal and DIAMOND",
     )
 
 
@@ -79,9 +83,8 @@ def main(args):
     tsv = os.path.join(args["dest_db"], "genome_db/checkv_reps.tsv")
     with open(tsv, "a") as f:
         for r in Bio.SeqIO.parse(fna, "fasta"):
-            f.write("\t".join([r.id, "circular", str(len(r.seq))])+"\n")
+            f.write("\t".join([r.id, "circular", str(len(r.seq))]) + "\n")
 
     logger.info("Run time: %s seconds" % round(time.time() - program_start, 2))
     logger.info("Peak mem: %s GB" % round(utility.max_mem_usage(), 2))
     shutil.rmtree(tmp)
-

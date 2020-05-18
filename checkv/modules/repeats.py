@@ -36,30 +36,12 @@ def fetch_arguments(parser):
         "--min_tr_len", type=int, default=20, metavar="INT", help="Min length of TR",
     )
     parser.add_argument(
-        "--max_tr_count",
-        type=int,
-        default=5,
-        metavar="INT",
-        help="Max occurrences of TR per contig",
-    )
-    parser.add_argument(
-        "--max_tr_dust",
-        type=float,
-        default=20.0,
-        metavar="FLOAT",
-        help="Longest low complexity region per TR, as %% of TR length",
-    )
-    parser.add_argument(
         "--quiet", action="store_true", default=False, help="Suppress logging messages",
     )
 
 
 def set_defaults(args):
-    key_values = [
-        ("min_tr_len", 20),
-        ("max_tr_count", 5),
-        ("max_tr_dust", 20.0)
-        ]
+    key_values = [("min_tr_len", 20), ("max_tr_count", 5), ("max_tr_dust", 20.0)]
     for key, value in key_values:
         if key not in args:
             args[key] = value
@@ -127,7 +109,7 @@ def main(args):
     # at least 20 windows with max win size of 2000-bp
     for genome in genomes.values():
         counts = []
-        win_size = min([int(len(genome.seq)/20), 2000])
+        win_size = min([int(len(genome.seq) / 20), 2000])
         start, end = 0, win_size
         while end <= len(genome.seq):
             counts.append(genome.seq.count(genome.seq[start:end]))
@@ -154,13 +136,17 @@ def main(args):
     for id in sorted(genomes.keys()):
         genome = genomes[id]
         if len(genome.dtr.seq) >= args["min_tr_len"]:
-            mode_base, mode_count = collections.Counter(genome.dtr.seq).most_common(1)[0]
-            genome.dtr.mode_freq = 1.0*mode_count/len(genome.dtr.seq)
-            genome.dtr.n_freq = 1.0*genome.dtr.seq.count("N")/len(genome.dtr.seq)
+            mode_base, mode_count = collections.Counter(genome.dtr.seq).most_common(1)[
+                0
+            ]
+            genome.dtr.mode_freq = 1.0 * mode_count / len(genome.dtr.seq)
+            genome.dtr.n_freq = 1.0 * genome.dtr.seq.count("N") / len(genome.dtr.seq)
         if len(genome.itr.seq) >= args["min_tr_len"]:
-            mode_base, mode_count = collections.Counter(genome.itr.seq).most_common(1)[0]
-            genome.itr.mode_freq = 1.0*mode_count/len(genome.itr.seq)
-            genome.itr.n_freq = 1.0*genome.itr.seq.count("N")/len(genome.itr.seq)
+            mode_base, mode_count = collections.Counter(genome.itr.seq).most_common(1)[
+                0
+            ]
+            genome.itr.mode_freq = 1.0 * mode_count / len(genome.itr.seq)
+            genome.itr.n_freq = 1.0 * genome.itr.seq.count("N") / len(genome.itr.seq)
 
     logger.info("[5/6] Running dustmasker to check repeat sequence complexity...")
     args["tr_path"] = f"{args['tmp']}/tr.fna"
@@ -277,4 +263,3 @@ def main(args):
 
     logger.info("Run time: %s seconds" % round(time.time() - program_start, 2))
     logger.info("Peak mem: %s GB" % round(utility.max_mem_usage(), 2))
-

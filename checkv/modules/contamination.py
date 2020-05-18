@@ -58,9 +58,7 @@ def fetch_arguments(parser):
 
 
 def set_defaults(args):
-    key_values = [
-        ("exclude", None)
-        ]
+    key_values = [("exclude", None)]
     for key, value in key_values:
         if key not in args:
             args[key] = value
@@ -202,9 +200,9 @@ def define_regions(genome, genes, win_size, gc_weight, delta_cutoff, min_host_fr
                 breaks[-1] = d
             # breakpoints both start at R edge
             # use breakpoint that is further L
-            elif d["coords"][-1] == len(genome.genes) and breaks[-1]["coords"][-1] == len(
-                genome.genes
-            ):
+            elif d["coords"][-1] == len(genome.genes) and breaks[-1]["coords"][
+                -1
+            ] == len(genome.genes):
                 pass
             # does not overlap: add new breakpoint
             else:
@@ -233,7 +231,9 @@ def define_regions(genome, genes, win_size, gc_weight, delta_cutoff, min_host_fr
             if len(regions) > 0
             else 1,  # 1-indexed
             "end_pos": my_genes[e1 - 1].end,  # 1-indexed
-            "start_gene": regions[-1]["end_gene"] if len(regions) > 0 else 0,  # 0-indexed
+            "start_gene": regions[-1]["end_gene"]
+            if len(regions) > 0
+            else 0,  # 0-indexed
             "end_gene": e1,  # 0-indexed
         }
         region["size"] = region["end_gene"] - region["start_gene"]
@@ -291,7 +291,9 @@ def main(args):
     hmm_info = {}
     p = os.path.join(args["db"], "hmm_db/checkv_hmms.tsv")
     for r in csv.DictReader(open(p), delimiter="\t"):
-        r["score_cutoff"] = max([float(r["score_cutoff"]), 25.0])  # min cutoff == 25 bits
+        r["score_cutoff"] = max(
+            [float(r["score_cutoff"]), 25.0]
+        )  # min cutoff == 25 bits
         hmm_info[r["hmm"]] = r
     if args["exclude"]:
         for l in open(args["exclude"]):
@@ -405,7 +407,10 @@ def main(args):
             [str(r["start_pos"]) + "-" + str(r["end_pos"]) for r in genome.regions]
         )
         region_genes = ",".join(
-            [str(r["start_gene"] + 1) + "-" + str(r["end_gene"]) for r in genome.regions]
+            [
+                str(r["start_gene"] + 1) + "-" + str(r["end_gene"])
+                for r in genome.regions
+            ]
         )
         row = [genome.id, genome.length, viral_length, host_length]
         row += [len(genome.genes), genome.count_viral, genome.count_host]

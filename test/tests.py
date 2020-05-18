@@ -9,12 +9,12 @@ def test_database_exists(database):
         assert 0
 
 
-def test_contamination_module(database):
+def test_contamination_module(database, threads):
     args = {
         "input": "test/test_sequences.fna",
         "output": "test/output_files",
         "db": database,
-        "threads": 1,
+        "threads": threads,
         "restart": False,
         "quiet": False,
         "exclude": None,
@@ -34,12 +34,12 @@ def test_contamination_module(database):
                 assert l1 == l2
 
 
-def test_completeness_module(database):
+def test_completeness_module(database, threads):
     args = {
         "input": "test/test_sequences.fna",
         "output": "test/output_files",
         "db": database,
-        "threads": 1,
+        "threads": threads,
         "restart": False,
         "percent_of_top_hit": 50.0,
         "max_aai": None,

@@ -19,7 +19,7 @@ programs:
     repeats             identify terminal repeats & estimate genome copy number
     quality_summary     summarize results across modules
     download_database   download the latest version of CheckV's database
-    update_database     update CheckV's database with your own complete genomes"""
+    update_database     update CheckV's database with your own complete genomes""",
     )
 
     subparsers = parser.add_subparsers(help=argparse.SUPPRESS)
@@ -29,7 +29,7 @@ programs:
         usage=argparse.SUPPRESS,
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="""Run full pipeline to estimate completeness, contamination, and identify closed genomes
-\nusage: checkv end_to_end <input> <output> [options]"""
+\nusage: checkv end_to_end <input> <output> [options]""",
     )
     checkv.end_to_end.fetch_arguments(end_to_end_parser)
 
@@ -38,7 +38,7 @@ programs:
         usage=argparse.SUPPRESS,
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="""Download the latest version of CheckV's database
-\nusage: checkv download_database <destination>"""
+\nusage: checkv download_database <destination>""",
     )
     checkv.download_database.fetch_arguments(download_database_parser)
 
@@ -47,7 +47,7 @@ programs:
         usage=argparse.SUPPRESS,
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="""Update CheckV's database with your own complete genomes
-\nusage: checkv update_database <source_db> <dest_db> <genomes> [options]"""
+\nusage: checkv update_database <source_db> <dest_db> <genomes> [options]""",
     )
     checkv.update_database.fetch_arguments(update_database_parser)
 
@@ -56,7 +56,7 @@ programs:
         usage=argparse.SUPPRESS,
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="""Estimate host contamination for integrated proviruses
-\nusage: checkv contamination <input> <output> [options]"""
+\nusage: checkv contamination <input> <output> [options]""",
     )
     checkv.contamination.fetch_arguments(contamination_parser)
 
@@ -65,7 +65,7 @@ programs:
         usage=argparse.SUPPRESS,
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="""Estimate completeness for genome fragments
-\nusage: checkv completeness <input> <output> [options]"""
+\nusage: checkv completeness <input> <output> [options]""",
     )
     checkv.completeness.fetch_arguments(completeness_parser)
 
@@ -74,7 +74,7 @@ programs:
         usage=argparse.SUPPRESS,
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="""Identify terminal repeats & estimate genome copy number
-\nusage: checkv repeats <input> <output> [options]"""
+\nusage: checkv repeats <input> <output> [options]""",
     )
     checkv.repeats.fetch_arguments(repeats_parser)
 
@@ -83,7 +83,7 @@ programs:
         usage=argparse.SUPPRESS,
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="""Summarize results across modules
-\nusage: checkv quality_summary <input> <output> [options]"""
+\nusage: checkv quality_summary <input> <output> [options]""",
     )
     checkv.quality_summary.fetch_arguments(summary_parser)
 

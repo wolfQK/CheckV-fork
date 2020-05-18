@@ -16,7 +16,9 @@ from checkv import utility
 def fetch_arguments(parser):
     parser.set_defaults(func=main)
     parser.set_defaults(program="end_to_end")
-    parser.add_argument("input", type=str, help="Input nucleotide sequences in FASTA format")
+    parser.add_argument(
+        "input", type=str, help="Input nucleotide sequences in FASTA format"
+    )
     parser.add_argument("output", type=str, help="Output directory")
     parser.add_argument(
         "-d",
@@ -48,14 +50,17 @@ def fetch_arguments(parser):
 def main(args):
 
     from checkv import contamination
+
     contamination.main(args)
 
     from checkv import completeness
+
     completeness.main(args)
 
     from checkv import repeats
+
     repeats.main(args)
 
     from checkv import quality_summary
-    quality_summary.main(args)
 
+    quality_summary.main(args)

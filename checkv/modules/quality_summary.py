@@ -25,6 +25,7 @@ def fetch_arguments(parser):
         "--quiet", action="store_true", default=False, help="Suppress logging messages",
     )
 
+
 def assign_quality_tier(genome):
     # fetch completeness
     if genome.method == "AAI-based":
@@ -50,18 +51,19 @@ def assign_quality_tier(genome):
 
     # assign complete
     if len(genome.termini) > 0:
-        if (genome.method == "AAI-based"
-                and completeness >= 90
-            ):
+        if genome.method == "AAI-based" and completeness >= 90:
             genome.quality = "Complete"
             genome.miuvig = "High-quality"
-        elif (genome.method == "HMM-based"
-                and float(genome.completeness.split("-")[0]) >= 90
-            ):
+        elif (
+            genome.method == "HMM-based"
+            and float(genome.completeness.split("-")[0]) >= 90
+        ):
             genome.quality = "Complete"
             genome.miuvig = "High-quality"
         else:
-            genome.warnings.append("predicted termini not supported by estimated completeness")
+            genome.warnings.append(
+                "predicted termini not supported by estimated completeness"
+            )
 
 
 def main(args):
@@ -159,12 +161,16 @@ def main(args):
 
                 # completeness warning
                 if completeness >= 120:
-                    ratio = round(completeness/100,2)
-                    genome.warnings.append(f"contig {ratio}x length of matched reference")
+                    ratio = round(completeness / 100, 2)
+                    genome.warnings.append(
+                        f"contig {ratio}x length of matched reference"
+                    )
 
             # HMM-based estimate
             elif r["hmm_completeness_lower"] != "NA":
-                genome.completeness = f"{r['hmm_completeness_lower']}.0 - {r['hmm_completeness_upper']}.0"
+                genome.completeness = (
+                    f"{r['hmm_completeness_lower']}.0 - {r['hmm_completeness_upper']}.0"
+                )
                 genome.method = "HMM-based"
 
     logger.info("[4/6] Reading results from repeats module...")
@@ -178,13 +184,17 @@ def main(args):
 
             # copies warning
             if float(genome.copies) >= 1.2:
-                genome.warnings.append(f"{genome.copies} genome copies may indicate assembly artifact")
+                genome.warnings.append(
+                    f"{genome.copies} genome copies may indicate assembly artifact"
+                )
 
             # terminal repeat
             if r["repeat_type"] != "NA":
                 genome.termini.append(r["repeat_length"] + "-bp-" + r["repeat_type"])
                 if r["repeat_flagged"] == "Yes":
-                    genome.warnings.append(f"repeat flagged due to {r['flagged_reason']}")
+                    genome.warnings.append(
+                        f"repeat flagged due to {r['flagged_reason']}"
+                    )
 
     logger.info("[5/6] Classifying contigs into quality tiers...")
     for genome in genomes.values():
@@ -224,7 +234,7 @@ def main(args):
             genome.contamination,
             genome.prophage,
             ",".join(genome.termini),
-            "; ".join(["'"+_+"'" for _ in genome.warnings])
+            "; ".join(["'" + _ + "'" for _ in genome.warnings]),
         ]
         out.write("\t".join([str(_) for _ in row]) + "\n")
 

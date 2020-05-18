@@ -59,7 +59,10 @@ def fetch_arguments(parser):
         "--max_aai", type=float, default=None, help=argparse.SUPPRESS,
     )
     parser.add_argument(
-        "--exclude_identical", action="store_true", default=False, help=argparse.SUPPRESS
+        "--exclude_identical",
+        action="store_true",
+        default=False,
+        help=argparse.SUPPRESS,
     )
     parser.add_argument(
         "--exclude_list", type=str, default=None, metavar="PATH", help=argparse.SUPPRESS
@@ -224,7 +227,9 @@ def compute_aai(blastp_path, out_path, genomes, genes, refs):
                 identity = round(
                     sum(x * y for x, y in zip(pids, lens)) / aligned_length, 2
                 )
-                percent_length = round(100.0 * aligned_length / genomes[query].protlen, 2)
+                percent_length = round(
+                    100.0 * aligned_length / genomes[query].protlen, 2
+                )
                 percent_genes = round(100.0 * aligned_genes / genomes[query].genes, 2)
                 score = round(identity * aligned_length / 100, 2)
                 row = [
@@ -282,7 +287,10 @@ def store_aai(args, genomes, exclude, refs):
             genomes[r["query"]].aai.append(r)
         else:
             top_score = genomes[r["query"]].aai[0]["score"]
-            if 100.0 * (top_score - r["score"]) / top_score <= args["percent_of_top_hit"]:
+            if (
+                100.0 * (top_score - r["score"]) / top_score
+                <= args["percent_of_top_hit"]
+            ):
                 genomes[r["query"]].aai.append(r)
 
 
@@ -363,11 +371,14 @@ def aai_based_completeness(args, genomes, exclude, refs):
                 weights
             )
             query_length = (
-                genome.viral_length if genome.viral_length is not None else genome.length
+                genome.viral_length
+                if genome.viral_length is not None
+                else genome.length
             )
             genome.aai_completeness = 100.0 * query_length / genome.expected_length
             genome.aai_confidence = confidence
             genome.aai_error = est_error
+
 
 def fetch_percentile(num, lst):
     """
@@ -378,8 +389,9 @@ def fetch_percentile(num, lst):
     """
     for rank, length in enumerate(lst):
         if num < length:
-            return 100.0*(rank)/len(lst)
+            return 100.0 * (rank) / len(lst)
     return 100.0
+
 
 def hmm_based_completeness(args, genomes, hmms):
     """
@@ -413,7 +425,7 @@ def hmm_based_completeness(args, genomes, hmms):
         # ranging from 1 to 100
         x = []
         for comp in range(0, 101, 1):
-            size = query_length * 100.0 / comp if comp > 0 else float('Inf')
+            size = query_length * 100.0 / comp if comp > 0 else float("Inf")
             perc = fetch_percentile(size, hmms[hmm]["lengths"])
             x.append([comp, perc])
 
@@ -422,6 +434,7 @@ def hmm_based_completeness(args, genomes, hmms):
         genome.hmm_completeness_lower = [comp for comp, perc in x if perc >= 95][-1]
         genome.hmm_completeness_upper = [comp for comp, perc in x if perc >= 5][-1]
         genome.hmm_name = hmm
+
 
 def main(args):
 
