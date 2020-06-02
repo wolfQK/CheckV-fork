@@ -98,8 +98,10 @@ pytest --database=/path/to/checkv-db --threads=16
 
 ## Known Issues
 
-* Bug in completeness module (v0.5.1) that suppresses output of HMM-based results
 * DIAMOND v0.9.30 does not work on OSX
+* Excel formatting issue that corrupts data when imported to excel
+* (SOLVED) Bug in completeness module (v0.5.1) that suppresses output of HMM-based results
+
 
 ## Output files
 
@@ -184,7 +186,10 @@ In the example, above there are results for 5 viral contigs:
 ## Frequently asked questions
 
 **Q: What is the difference between AAI- and HMM-based completeness?**  
-A: AAI-based completeness was designed to be very accurate and can be trusted when the confidence is medium or high. HMM-based completeness was designed to confidently estimate the minimum completeness. So a value of 50% indicates that we can be 95% sure that the viral contig is at least 50% complete. But it may be more complete, so this should be taken into consideration when analyzing CheckV output.
+A: AAI-based completeness produces a single estimated completeness value, which was designed to be very accurate and can be trusted when the reported confidence level is medium or high. 
+HMM-based completeness gives the 90% confidence interval of completeness (e.g. 30-75) in cases where AAI-based completeness is not reliable. 
+In this example, we can be 90% sure that the completeness is between 30% to 75%.
+Put another way, we can be 95% sure that the genome is at least 30% complete, and 95% sure that it's no more than 75% complete. 
 
 **Q: What is the meaning of the genome_copies field?**  
 A: This is a measure of how many times the viral genome is represented in the contig. Most times this is 1.0 (or very close to 1.0). In rare cases assembly errors may occur in which the contig sequence represents multiple concatenated copies of the viral genome. In these cases genome_copies will exceed 1.0.
@@ -215,3 +220,12 @@ A: This happens when the sequence doesn't match any CheckV reference genome with
 
 **Q: How should I handle sequences with "undetermined quality"?**  
 A: While it is not possible to estimate completeness for these, you may choose to still analyze sequences above a certain length (e.g. >30 kb). 
+
+**Q: Does CheckV taxonomically annotate my sequences?**  
+A: CheckV does not perform taxonomic annotation of viral contigs. However, some taxonomic information is available for users to find on their own.
+You can implement this yourself by looking at the taxonomy (and also the source environment too) for the top hit to the genome database. 
+First, you can find the top hit info from the 'aai_top_hit' field in the 'completeness.tsv' output file. 
+Then you can look up the taxonomy of the top hit.
+If the top hit starts with 'DTR' look here at the 'lineage' field in 'checkv_circular.tsv' database file. 
+You can also look at 'habitat' field here as well. 
+For GenBank references starting with 'GCA' look at the 'vog_clade' or 'lineage' field in 'checkv_genbank.tsv' database file.
