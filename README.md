@@ -185,6 +185,11 @@ In the example, above there are results for 5 viral contigs:
 
 ## Frequently asked questions
 
+**Q: How do I interpret completeness > 100%?**  
+A: In most cases, this can be interpreted as completeness is very close to or equal to 100%. 
+AAI-based completeness is based on comparison to the genome length of CheckV references, 
+so when query genome is (near)complete it can be a little bit longer than the closest reference genome.
+
 **Q: What is the difference between AAI- and HMM-based completeness?**  
 A: AAI-based completeness produces a single estimated completeness value, which was designed to be very accurate and can be trusted when the reported confidence level is medium or high. 
 HMM-based completeness gives the 90% confidence interval of completeness (e.g. 30-75) in cases where AAI-based completeness is not reliable. 
