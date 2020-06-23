@@ -401,14 +401,14 @@ def main(args):
     for genome in genomes.values():
         viral_length = sum(r["length"] for r in genome.regions if r["type"] == "viral")
         host_length = sum(r["length"] for r in genome.regions if r["type"] == "host")
-        region_types = ",".join([r["type"] for r in genome.regions])
+        region_types = ", ".join([r["type"] for r in genome.regions])
         region_lengths = ",".join([str(r["length"]) for r in genome.regions])
         region_coords = ",".join(
-            [str(r["start_pos"]) + "-" + str(r["end_pos"]) for r in genome.regions]
+            [str(r["start_pos"]) + "-to-" + str(r["end_pos"]) for r in genome.regions]
         )
         region_genes = ",".join(
             [
-                str(r["start_gene"] + 1) + "-" + str(r["end_gene"])
+                str(r["start_gene"] + 1) + "-to-" + str(r["end_gene"])
                 for r in genome.regions
             ]
         )

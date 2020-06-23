@@ -1,4 +1,8 @@
-Version 0.6.0 (next release)
+Version 0.7.0 (next release)
+* excel reformatting for ranges (e.g. 1-6 now 1-to-6)
+* fixed bug when using --restart in end_to_end mode 
+
+Version 0.6.0 (current release)
 * Bug fix in completeness module that suppressed HMM-based results
 * HMM-based completeness now reported as range: 90% confidence interval = X-Y% complete
 * Warnings added to quality_summary.tsv for range of conditions
@@ -11,7 +15,7 @@ Version 0.6.0 (next release)
 * cleaned_contigs.fna split into viruses.fna and proviruses.fna
 * Renamed field 'prophage' to 'provirus' in quality_summary.tsv
 
-Version 0.5.1 (May 11, 2020, current release)
+Version 0.5.1 (May 11, 2020)
 * Added download_database module to automatically download latest version of db
 * Added update_database module to update db with new genomes
 * Added end_to_end module to run all CheckV modules

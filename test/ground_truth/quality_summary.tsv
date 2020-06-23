@@ -5,31 +5,31 @@ contig_id	contig_length	genome_copies	gene_count	viral_genes	host_genes	checkv_q
 2013338001_____MeugFOFF_C2873	15684	1.0	23	15	0	Low-quality	Genome-fragment	31.93	AAI-based	0.0	No		
 2013338001_____MeugFOFF_C2874	13607	1.0	19	15	0	Low-quality	Genome-fragment	26.2	AAI-based	0.0	No		
 2013338001_____MeugFOFF_C3211	9837	1.0	14	4	2	Low-quality	Genome-fragment	10.73	AAI-based	41.92	Yes		
-2013338001_____MeugFOFF_C3227	5495	1.0	10	5	0	Low-quality	Genome-fragment	9.0 - 17.0	HMM-based	0.0	No		
-2013338001_____MeugFOFF_C3886	5085	1.0	6	2	1	Low-quality	Genome-fragment	3.0 - 13.0	HMM-based	0.0	No		
+2013338001_____MeugFOFF_C3227	5495	1.0	10	5	0	Low-quality	Genome-fragment	9-to-17	HMM-based	0.0	No		
+2013338001_____MeugFOFF_C3886	5085	1.0	6	2	1	Low-quality	Genome-fragment	3-to-13	HMM-based	0.0	No		
 2013338001_____MeugFOFF_C4026	11395	1.0	11	4	0	Low-quality	Genome-fragment	4.44	AAI-based	0.0	No		
 2013338001_____MeugFOFF_C4295	8894	1.0	10	4	0	Low-quality	Genome-fragment	18.91	AAI-based	0.0	No		
 2013338001_____MeugFOFF_C4795	5143	1.0	7	6	0	Low-quality	Genome-fragment	3.03	AAI-based	0.0	No		
-2013338001_____MeugFOFF_C5216	5456	1.0	6	1	0	Low-quality	Genome-fragment	7.0 - 15.0	HMM-based	0.0	No		
+2013338001_____MeugFOFF_C5216	5456	1.0	6	1	0	Low-quality	Genome-fragment	7-to-15	HMM-based	0.0	No		
 2013338002_____MeugFWYF_C6159	5135	1.0	9	2	0	Low-quality	Genome-fragment	11.28	AAI-based	0.0	No		
 2013338002_____MeugFWYF_C6321	14082	1.0	20	14	0	Low-quality	Genome-fragment	34.97	AAI-based	0.0	No	20-bp-DTR	'repeat flagged due to high_single_base_freq'; 'predicted termini not supported by estimated completeness'
-2013843001_____PLMO_C1010	7812	1.0	11	5	0	Low-quality	Genome-fragment	13.0 - 24.0	HMM-based	0.0	No		
+2013843001_____PLMO_C1010	7812	1.0	11	5	0	Low-quality	Genome-fragment	13-to-24	HMM-based	0.0	No		
 2013843001_____PLMO_C1011	20515	1.0	27	13	1	Low-quality	Genome-fragment	47.84	AAI-based	0.0	No		
-2013843001_____PLMO_C1280	23319	1.0	44	2	0	Low-quality	Genome-fragment	14.0 - 63.0	HMM-based	0.0	No		
+2013843001_____PLMO_C1280	23319	1.0	44	2	0	Low-quality	Genome-fragment	14-to-63	HMM-based	0.0	No		
 2013843001_____PLMO_C1410	6539	1.0	17	4	0	Low-quality	Genome-fragment	14.02	AAI-based	0.0	No		
-2013843001_____PLMO_C1550	11657	1.0	22	2	0	Low-quality	Genome-fragment	5.0 - 33.0	HMM-based	0.0	No		
-2013843001_____PLMO_C2323	10742	1.0	14	5	0	Low-quality	Genome-fragment	19.0 - 31.0	HMM-based	0.0	No		
-2013843001_____PLMO_C2429	49521	1.0	68	26	1	Medium-quality	Genome-fragment	83.0 - 100.0	HMM-based	0.0	No		
+2013843001_____PLMO_C1550	11657	1.0	22	2	0	Low-quality	Genome-fragment	5-to-33	HMM-based	0.0	No		
+2013843001_____PLMO_C2323	10742	1.0	14	5	0	Low-quality	Genome-fragment	19-to-31	HMM-based	0.0	No		
+2013843001_____PLMO_C2429	49521	1.0	68	26	1	Medium-quality	Genome-fragment	83-to-100	HMM-based	0.0	No		
 2013843001_____PLMO_C243	10298	1.0	12	6	0	Low-quality	Genome-fragment	19.49	AAI-based	0.0	No		
-2013843001_____PLMO_C2782	26715	1.0	45	11	0	Low-quality	Genome-fragment	48.0 - 73.0	HMM-based	0.0	No		
+2013843001_____PLMO_C2782	26715	1.0	45	11	0	Low-quality	Genome-fragment	48-to-73	HMM-based	0.0	No		
 2013843001_____PLMO_C312	16344	1.0	20	4	1	Low-quality	Genome-fragment	37.73	AAI-based	0.0	No		
-2013843001_____PLMO_C42	6040	1.0	9	5	0	Low-quality	Genome-fragment	8.0 - 17.0	HMM-based	0.0	No		
+2013843001_____PLMO_C42	6040	1.0	9	5	0	Low-quality	Genome-fragment	8-to-17	HMM-based	0.0	No		
 2013843001_____PLMO_C457	8998	1.0	13	7	1	Low-quality	Genome-fragment	17.66	AAI-based	16.67	Yes		
 2013843002_____DCKB1_C1454	36570	1.0	42	22	0	Medium-quality	Genome-fragment	77.13	AAI-based	0.0	No	20-bp-DTR	'repeat flagged due to high_single_base_freq'; 'predicted termini not supported by estimated completeness'
-2013843002_____DCKB1_C2382	81346	1.0	104	3	12	Complete	High-quality	100.0 - 100.0	HMM-based	0.0	No	20-bp-DTR	'microbial genes > viral genes'; 'repeat flagged due to high_single_base_freq'
-2013843002_____DCKB1_C2547	27099	1.0	48	13	1	Low-quality	Genome-fragment	48.0 - 68.0	HMM-based	0.0	No		
+2013843002_____DCKB1_C2382	81346	1.0	104	3	12	Complete	High-quality	100-to-100	HMM-based	0.0	No	20-bp-DTR	'microbial genes > viral genes'; 'repeat flagged due to high_single_base_freq'
+2013843002_____DCKB1_C2547	27099	1.0	48	13	1	Low-quality	Genome-fragment	48-to-68	HMM-based	0.0	No		
 2013843002_____DCKB1_C3067	6913	1.0	13	0	0	Not-determined	Genome-fragment	NA	NA	0.0	No	20-bp-DTR	'no viral genes detected'; 'repeat flagged due to high_single_base_freq'; 'predicted termini not supported by estimated completeness'
-2013843002_____DCKB1_C3122	7917	1.0	13	1	0	Low-quality	Genome-fragment	7.0 - 26.0	HMM-based	0.0	No		
+2013843002_____DCKB1_C3122	7917	1.0	13	1	0	Low-quality	Genome-fragment	7-to-26	HMM-based	0.0	No		
 2013843002_____DCKB1_C717	26277	1.0	39	0	1	Not-determined	Genome-fragment	NA	NA	0.0	No	20-bp-DTR	'no viral genes detected'; 'repeat flagged due to high_single_base_freq'; 'predicted termini not supported by estimated completeness'
 2013843003_____YNP4_C4539	8423	1.0	18	0	0	Not-determined	Genome-fragment	NA	NA	0.0	No		'no viral genes detected'
 2013843003_____YNP4_C4540	5953	1.0	12	0	0	Not-determined	Genome-fragment	NA	NA	0.0	No		'no viral genes detected'

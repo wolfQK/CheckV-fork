@@ -169,7 +169,7 @@ def main(args):
             # HMM-based estimate
             elif r["hmm_completeness_lower"] != "NA":
                 genome.completeness = (
-                    f"{r['hmm_completeness_lower']}.0 - {r['hmm_completeness_upper']}.0"
+                    f"{r['hmm_completeness_lower']}-to-{r['hmm_completeness_upper']}"
                 )
                 genome.method = "HMM-based"
 

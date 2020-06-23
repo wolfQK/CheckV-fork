@@ -49,6 +49,12 @@ def fetch_arguments(parser):
 
 def main(args):
 
+    # if restart flag, delete tmp only 1x
+    args["tmp"] = os.path.join(args["output"], "tmp")
+    if args["restart"] and os.path.exists(args["tmp"]):
+        shutil.rmtree(args["tmp"])
+    args["restart"] = False
+
     from checkv import contamination
 
     contamination.main(args)
