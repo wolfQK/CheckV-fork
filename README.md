@@ -65,6 +65,8 @@ Some users may wish to update the database using their own complete genomes (ava
 checkv update_database /path/to/checkv-db /path/to/updated-checkv-db genomes.fna
 ```
 
+#### *Please, download the database only once. Repeated downloads may overload the server.*
+
 ## Quick start
 
 There are two ways to run CheckV:
