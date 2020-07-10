@@ -99,6 +99,7 @@ def main(args):
     logger.info("[1/6] Reading input sequences...")
     genomes = {}
     for r in Bio.SeqIO.parse(args["input"], "fasta"):
+        if len(r.seq) == 0: continue
         genome = Genome()
         genome.id = r.id
         genome.seq = str(r.seq).upper()
@@ -107,7 +108,7 @@ def main(args):
 
     logger.info("[2/6] Determining genome copy number...")
     # at least 20 windows with max win size of 2000-bp
-    for genome in genomes.values():
+    for index, genome in enumerate(genomes.values()):
         counts = []
         win_size = min([int(len(genome.seq) / 20), 2000])
         start, end = 0, win_size
@@ -263,3 +264,4 @@ def main(args):
 
     logger.info("Run time: %s seconds" % round(time.time() - program_start, 2))
     logger.info("Peak mem: %s GB" % round(utility.max_mem_usage(), 2))
+
