@@ -109,7 +109,7 @@ pytest --database=/path/to/checkv-db --threads=16
 
 This contains integrated results from the three main modules and should be the main output referred to. Below is an example to demonstrate the type of results you can expect in your data:
 
-contig_id | contig\_length | 	provirus | 	proviral\_length | 	gene_count | 	viral_genes | 	host_genes | 	checkv_quality | 	miuvig_quality | 	completeness | 	completeness\_method | 	complete\_genome_type | 	contamination | 	kmer_freq | 	warnings |     
+| contig_id | contig\_length | 	provirus | 	proviral\_length | 	gene_count | 	viral_genes | 	host_genes | 	checkv_quality | 	miuvig_quality | 	completeness | 	completeness\_method | 	complete\_genome_type | 	contamination | 	kmer_freq | 	warnings |     
 |---------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|  
 | 1 | 	5325 | 	No | 	NA | 	11 | 	0 | 	2 | 	Not-determined | 	Genome-fragment | 	NA | 	NA | 	NA | 	0 | 	1 | 	no viral genes detected | 
 | 2 | 	41803 | 	No | 	NA | 	72 | 	27 | 	1 | 	Low-quality | 	Genome-fragment | 	21.99 | 	AAI-based (medium-confidence) | 	NA | 	0 | 	1 | flagged DTR	 | 
@@ -130,7 +130,7 @@ In the example, above there are results for 6 viral contigs:
 
 A detailed overview of how completeness was estimated:
 
-contig_id  | contig_length  | proviral_length  | aai\_expected_length  | aai_completeness  | aai_confidence  | aai_error  | aai\_num_hits  | aai\_top_hit  | aai_id  | aai_af  | hmm\_completeness_lower  | hmm\_completeness_upper  | hmm_hits  | 
+| contig_id  | contig_length  | proviral_length  | aai\_expected_length  | aai_completeness  | aai_confidence  | aai_error  | aai\_num_hits  | aai\_top_hit  | aai_id  | aai_af  | hmm\_completeness_lower  | hmm\_completeness_upper  | hmm_hits  | 
 |---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|
 1  | 9837  | 5713  | 53242.8  | 10.7  | high  | 3.7  | 10  | DTR_517157  | 78.5  | 34.6  | 5  | 15  | 4  | 
 2  | 39498  | NA  | 37309  | 100.0  | medium  | 7.7  | 11  | DTR_357456  | 45.18  | 30.46  | 75  | 100 | 22 |
@@ -148,7 +148,7 @@ In the example, above there are results for 4 viral contigs:
 
 A detailed overview of how contamination was estimated:
 
-contig_id | 	contig_length | 	total_genes | 	viral_genes | 	host_genes | 	provirus | 	proviral_length | 	host_length | 	region_types | 	region_lengths | 	region\_coords_bp | 	region\_coords_genes | 	region\_viral_genes | 	region\_host_genes |  
+| contig_id | 	contig_length | 	total_genes | 	viral_genes | 	host_genes | 	provirus | 	proviral_length | 	host_length | 	region_types | 	region_lengths | 	region\_coords_bp | 	region\_coords_genes | 	region\_viral_genes | 	region\_host_genes |  
 |---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|
 | 1 | 	98051 | 	158 | 	27 | 	1 | 	No | 	NA | 	NA | 	NA | 	NA | 	NA | 	NA | 	NA | 	NA | 
 | 2 | 	38254 | 	54 | 	23 | 	2 | 	Yes | 	36072 | 	2182 | 	host,viral | 	1-2182,2183-38254 | 	1-2182,2183-38254 | 	1-4,5-54 | 	0,23 | 	2,0 | 
