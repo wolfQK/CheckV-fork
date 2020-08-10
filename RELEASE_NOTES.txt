@@ -1,13 +1,20 @@
-Version 0.7.0 (next release)
-* excel reformatting for ranges (e.g. 1-6 now 1-to-6)
-* checkv end_to_end: fixed bug when using --restart
-* checkv repeats: check for zero length seqs when estimating copy number
+Version 0.7.0 (current release)
+* update to contamination module to reduce false positive proviruses
+ -require at least 2 host genes in proviral host regions, except for contigs with <= 10 genes. reduces false positives in real data.
+ -improved sliding window algorithm: trailing window grows from last breakpoint while leading window has fixed size
+ -size of leading window is dynamically set: 30% of genes with min of 15 and max of 50
+ -additional statistics reported for each host/viral region
+* update to hmm-based completeness for more robust estimates
+ -improved identification of 5% and 95% quantiles
+ -use all HMMs to calculate completeness: each yields the 5%-95% completeness range, and these ranges are averaged after weighting each by the HMMs coefficient of variation (based on how variable reference genome sizes are for the HMM)
+ -improves concordance with AAI-based completeness
+* update to complete_genomes module (formerly called repeats)
+ -added confidence levels, based on comparison to completeness and detection of artifacts
 
-Version 0.6.0 (current release)
+Version 0.6.0
 * Bug fix in completeness module that suppressed HMM-based results
 * HMM-based completeness now reported as range: 90% confidence interval = X-Y% complete
 * Warnings added to quality_summary.tsv for range of conditions
-* ?? Change from DIAMOND v0.9.30 to v0.9.32 to support OSX
 * Minor parameter change for genome copy number estimation
 * Terminal repeat sequence included in output file (e.g. GCACTTC...)
 * Added terminal repeat metadata: ambig_freq and max_base_freq
@@ -16,14 +23,14 @@ Version 0.6.0 (current release)
 * cleaned_contigs.fna split into viruses.fna and proviruses.fna
 * Renamed field 'prophage' to 'provirus' in quality_summary.tsv
 
-Version 0.5.1 (May 11, 2020)
+Version 0.5.1
 * Added download_database module to automatically download latest version of db
 * Added update_database module to update db with new genomes
 * Added end_to_end module to run all CheckV modules
 * Added documentation for output files in README
 * Help text reformatted
 
-Version 0.4.0 (May 6, 2020)
+Version 0.4.0
 * New HMM-based completeness estimation
 * New estimation of genome copy #
 * Completeness capped at 100% in quality_summary.tsv output
@@ -36,7 +43,7 @@ Version 0.4.0 (May 6, 2020)
 * CheckV print program and database versions
 * CheckV checks for input files in quality_summary module
 
-Version 0.3.0 (April 27, 2020)
+Version 0.3.0
 * Added documentation to README.md
 * Support for compressed input files (gz, bz2, xz)
 * Param change for contamination module (win size: 35 to 40, min % host genes 20% to 30%)

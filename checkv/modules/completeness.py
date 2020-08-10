@@ -115,15 +115,14 @@ def init_database(args):
     for header, seq in utility.read_fasta(args["input"]):
         genome = Genome()
         genome.id = header.split()[0]
+        genome.seq = seq
         genome.length = len(seq)
         genome.genes = 0
         genome.protlen = 0
         genome.viral_length = None
         genome.aai = []
         genome.hmms = set([])
-        genome.hmm_name = None
-        genome.hmm_completeness_lower = None
-        genome.hmm_completeness_upper = None
+        genome.hmm_completeness = (None, None)
         genome.expected_length = None
         genome.aai_completeness = None
         genome.aai_confidence = None
@@ -148,7 +147,7 @@ def init_database(args):
             if "genome_id" in r:  ## temporary fix due to changing field format
                 r["contig_id"] = r["genome_id"]
             if "viral" in r["region_types"]:
-                genomes[r["contig_id"]].viral_length = int(r["viral_length"])
+                genomes[r["contig_id"]].viral_length = int(r["proviral_length"])
             else:
                 genomes[r["contig_id"]].viral_length = None
 
@@ -375,25 +374,14 @@ def aai_based_completeness(args, genomes, exclude, refs):
                 if genome.viral_length is not None
                 else genome.length
             )
-            genome.aai_completeness = 100.0 * query_length / genome.expected_length
+            genome.aai_completeness = min(
+                [100.0 * query_length / genome.expected_length, 100.0]
+            )
             genome.aai_confidence = confidence
             genome.aai_error = est_error
 
 
-def fetch_percentile(num, lst):
-    """
-    Compute the percentile of num in lst. Example logic:
-    if num is smaller than 1st element, rank = 0, percentile = 0
-    if num is smaller than 2nd element, rank = 1, percentile = 1/len(list)
-    if num is not smaller than last element, percentile = 100
-    """
-    for rank, length in enumerate(lst):
-        if num < length:
-            return 100.0 * (rank) / len(lst)
-    return 100.0
-
-
-def hmm_based_completeness(args, genomes, hmms):
+def hmm_based_completeness(args, genomes, hmms, annotation_path):
     """
     1. Store HMM information (name, genome lengths, CV)
     2. List HMMs hitting each genome
@@ -403,37 +391,40 @@ def hmm_based_completeness(args, genomes, hmms):
     """
 
     # list hmms hitting each genome
-    p = os.path.join(args["tmp"], "gene_annotations.tsv")
-    for r in csv.DictReader(open(p), delimiter="\t"):
-        if r["target_hmm"] in hmms and hmms[r["target_hmm"]]["genomes"] >= 10:
-            genomes[r["contig_id"]].hmms.add(r["target_hmm"])
+    for r in csv.DictReader(open(annotation_path), delimiter="\t"):
+        if r["hmm_name"] in hmms and hmms[r["hmm_name"]]["genomes"] >= 10:
+            genomes[r["contig_id"]].hmms.add(r["hmm_name"])
 
     # estimate minimum completeness
     for genome in genomes.values():
 
-        # pick hmm for each query with lowest cv
-        genome.hmms = list(genome.hmms)
+        # check at least 1 hmm
         if len(genome.hmms) == 0:
             continue
-        cvs = [hmms[_]["cv"] for _ in genome.hmms]
-        hmm = [hmm for cv, hmm in sorted(zip(cvs, genome.hmms))][0]
+
+        # fetch genome length (viral region only)
         query_length = (
             genome.viral_length if genome.viral_length is not None else genome.length
         )
 
-        # rank genome based on hypothetical complenetness
-        # ranging from 1 to 100
-        x = []
-        for comp in range(0, 101, 1):
-            size = query_length * 100.0 / comp if comp > 0 else float("Inf")
-            perc = fetch_percentile(size, hmms[hmm]["lengths"])
-            x.append([comp, perc])
-
-        # completness_lower: 95% probability true value is higher
-        # completness_upper: 95% probability true value is not higher
-        genome.hmm_completeness_lower = [comp for comp, perc in x if perc >= 95][-1]
-        genome.hmm_completeness_upper = [comp for comp, perc in x if perc >= 5][-1]
-        genome.hmm_name = hmm
+        # get weighted completeness range
+        comps = []
+        for hmm in genome.hmms:
+            len_q1 = np.quantile(hmms[hmm]["lengths"], 0.05)
+            len_q2 = np.quantile(hmms[hmm]["lengths"], 0.95)
+            comp_q1 = round(min([100 * query_length / len_q2, 100.0]), 2)
+            comp_q2 = round(min([100 * query_length / len_q1, 100.0]), 2)
+            cv = hmms[hmm]["cv"]
+            weight = min([1 / cv, 50]) if cv != 0 else 50
+            comps.append([weight, comp_q1, comp_q2])
+        weight_total = sum([weight for weight, comp_q1, comp_q2 in comps])
+        comp_lower = (
+            sum([weight * comp_q1 for weight, comp_q1, comp_q2 in comps]) / weight_total
+        )
+        comp_upper = (
+            sum([weight * comp_q2 for weight, comp_q1, comp_q2 in comps]) / weight_total
+        )
+        genome.hmm_completeness = (comp_lower, comp_upper)
 
 
 def main(args):
@@ -456,46 +447,58 @@ def main(args):
 
     args["faa"] = os.path.join(args["tmp"], "proteins.faa")
     if os.path.exists(args["faa"]):
-        logger.info("[1/7] Skipping gene calling...")
+        logger.info("[1/8] Skipping gene calling...")
     else:
-        logger.info("[1/7] Calling genes with Prodigal...")
+        logger.info("[1/8] Calling genes with Prodigal...")
         utility.call_genes(args["input"], args["output"], args["threads"])
 
-    logger.info("[2/7] Initializing queries and database...")
+    logger.info("[2/8] Initializing queries and database...")
     genes, genomes, refs, exclude, hmms = init_database(args)
 
     args["blastp"] = os.path.join(args["tmp"], "diamond.tsv")
     if os.path.exists(args["blastp"]):
-        logger.info("[3/7] Skipping DIAMOND blastp search...")
+        logger.info("[3/8] Skipping DIAMOND blastp search...")
     else:
-        logger.info("[3/7] Running DIAMOND blastp search...")
+        logger.info("[3/8] Running DIAMOND blastp search...")
         utility.run_diamond(args["blastp"], args["db"], args["faa"], args["threads"])
 
     args["aai"] = os.path.join(args["tmp"], "aai.tsv")
     if os.path.exists(args["aai"]):
-        logger.info("[4/7] Skipping AAI computation...")
+        logger.info("[4/8] Skipping AAI computation...")
     else:
-        logger.info("[4/7] Computing AAI...")
+        logger.info("[4/8] Computing AAI...")
         compute_aai(args["blastp"], args["aai"], genomes, genes, refs)
 
-    logger.info("[5/7] Running AAI based completeness estimation...")
+    logger.info("[5/8] Running AAI based completeness estimation...")
     aai_based_completeness(args, genomes, exclude, refs)
 
-    annotation_path = os.path.join(args["tmp"], "gene_annotations.tsv")
+    annotation_path = os.path.join(args["tmp"], "gene_features.tsv")
     if os.path.exists(annotation_path):
-        logger.info("[6/7] Running HMM based completeness estimation...")
-        hmm_based_completeness(args, genomes, hmms)
+        logger.info("[6/8] Running HMM based completeness estimation...")
+        hmm_based_completeness(args, genomes, hmms, annotation_path)
     else:
         logger.info(
-            "[6/7] Skipping HMM based completeness estimation: requires output from 'checkv contamination'"
+            "[6/8] Skipping HMM based completeness estimation: requires output from 'checkv contamination'"
         )
 
-    logger.info("[7/7] Writing results...")
+    logger.info("[7/8] Determining genome copy number...")
+    for index, genome in enumerate(genomes.values()):
+        counts = []
+        # at least 20 windows with max win size of 2000-bp
+        win_size = min([int(len(genome.seq) / 20), 2000])
+        start, end = 0, win_size
+        while end <= len(genome.seq):
+            counts.append(genome.seq.count(genome.seq[start:end]))
+            start += win_size
+            end += win_size
+        genome.kmer_freq = round(np.mean(counts), 2)
+
+    logger.info("[8/8] Writing results...")
     p = os.path.join(args["output"], "completeness.tsv")
     fields = [
         "contig_id",
         "contig_length",
-        "viral_length",
+        "proviral_length",
         "aai_expected_length",
         "aai_completeness",
         "aai_confidence",
@@ -506,10 +509,8 @@ def main(args):
         "aai_af",
         "hmm_completeness_lower",
         "hmm_completeness_upper",
-        "hmm_name",
-        "hmm_ref_genomes",
-        "hmm_avg_length",
-        "hmm_cv_length",
+        "hmm_num_hits",
+        "kmer_freq",
     ]
     with open(p, "w") as out:
         out.write("\t".join(fields) + "\n")
@@ -528,15 +529,10 @@ def main(args):
                 rec["aai_top_hit"] = genome.aai[0]["target"]
                 rec["aai_id"] = genome.aai[0]["identity"]
                 rec["aai_af"] = genome.aai[0]["percent_length"]
-            rec["hmm_completeness_lower"] = genome.hmm_completeness_lower
-            rec["hmm_completeness_upper"] = genome.hmm_completeness_upper
-            rec["hmm_name"] = genome.hmm_name
-            if genome.hmm_name:
-                rec["hmm_ref_genomes"] = hmms[genome.hmm_name]["genomes"]
-                rec["hmm_avg_length"] = round(
-                    np.mean(hmms[genome.hmm_name]["lengths"]), 1
-                )
-                rec["hmm_cv_length"] = hmms[genome.hmm_name]["cv"]
+            rec["hmm_completeness_lower"] = genome.hmm_completeness[0]
+            rec["hmm_completeness_upper"] = genome.hmm_completeness[1]
+            rec["hmm_num_hits"] = len(genome.hmms)
+            rec["kmer_freq"] = genome.kmer_freq
             row = [
                 str(rec[f]) if f in rec and rec[f] is not None else "NA" for f in fields
             ]

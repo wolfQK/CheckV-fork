@@ -3,7 +3,7 @@ from checkv.modules import (
     update_database,
     contamination,
     completeness,
-    repeats,
+    complete_genomes,
     quality_summary,
     end_to_end,
 )

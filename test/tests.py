@@ -58,14 +58,17 @@ def test_repeats_module():
     args = {
         "input": "test/test_sequences.fna",
         "output": "test/output_files",
-        "min_tr_len": 20,
-        "max_tr_count": 5,
-        "max_tr_dust": 20.0,
+        "tr_min_len": 20,
+        "tr_max_count": 8,
+        "tr_max_dust": 0.50,
+        "tr_max_ambig": 0.20,
+        "tr_max_basefreq": 0.75,
+        "kmer_max_freq": 1.5,
         "quiet": False,
     }
     repeats.main(args)
-    with open("test/output_files/repeats.tsv") as test_output:
-        with open("test/ground_truth/repeats.tsv") as ground_truth_output:
+    with open("test/output_files/complete_genomes.tsv") as test_output:
+        with open("test/ground_truth/complete_genomes.tsv") as ground_truth_output:
             for l1, l2 in zip(test_output, ground_truth_output):
                 assert l1 == l2
 

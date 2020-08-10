@@ -26,46 +26,6 @@ def fetch_arguments(parser):
     )
 
 
-def assign_quality_tier(genome):
-    # fetch completeness
-    if genome.method == "AAI-based":
-        completeness = genome.completeness
-    elif genome.method == "HMM-based":
-        completeness = float(genome.completeness.split("-")[0])
-    else:
-        completeness = "NA"
-
-    # assign tier ## pick up here
-    if completeness == "NA":
-        genome.quality = "Not-determined"
-        genome.miuvig = "Genome-fragment"
-    elif completeness >= 90:
-        genome.quality = "High-quality"
-        genome.miuvig = "High-quality"
-    elif completeness >= 50:
-        genome.quality = "Medium-quality"
-        genome.miuvig = "Genome-fragment"
-    elif completeness < 50:
-        genome.quality = "Low-quality"
-        genome.miuvig = "Genome-fragment"
-
-    # assign complete
-    if len(genome.termini) > 0:
-        if genome.method == "AAI-based" and completeness >= 90:
-            genome.quality = "Complete"
-            genome.miuvig = "High-quality"
-        elif (
-            genome.method == "HMM-based"
-            and float(genome.completeness.split("-")[0]) >= 90
-        ):
-            genome.quality = "Complete"
-            genome.miuvig = "High-quality"
-        else:
-            genome.warnings.append(
-                "predicted termini not supported by estimated completeness"
-            )
-
-
 def main(args):
 
     program_start = time.time()
@@ -76,12 +36,10 @@ def main(args):
     if not os.path.exists(args["tmp"]):
         os.makedirs(args["tmp"])
 
-    path = os.path.join(args["output"], "completeness.tsv")
-    if not os.path.exists(path):
-        sys.exit(f"Error: input file does not exist: {path}\n")
-    path = os.path.join(args["output"], "repeats.tsv")
-    if not os.path.exists(path):
-        sys.exit(f"Error: input file does not exist: {path}\n")
+    for file in ["completeness.tsv", "complete_genomes.tsv"]:
+        path = os.path.join(args["output"], file)
+        if not os.path.exists(path):
+            sys.exit(f"Error: input file does not exist: {path}\n")
 
     logger.info(f"\nCheckV v{checkv.__version__}: quality_summary")
 
@@ -92,15 +50,17 @@ def main(args):
         genome.id = header.split()[0]
         genome.seq = seq
         genome.length = len(seq)
-        genome.copies = "NA"
+        genome.proviral_length = "NA"
+        genome.kmer_freq = "NA"
         genome.contamination = "NA"
         genome.prophage = "NA"
         genome.total_genes = "NA"
         genome.viral_genes = "NA"
         genome.host_genes = "NA"
         genome.completeness = "NA"
+        genome.complete = False
+        genome.complete_type = "NA"
         genome.method = "NA"
-        genome.termini = []
         genome.warnings = []
         genomes[genome.id] = genome
 
@@ -109,38 +69,22 @@ def main(args):
         logger.info("[2/6] Reading results from contamination module...")
         for r in csv.DictReader(open(p), delimiter="\t"):
             genome = genomes[r["contig_id"]]
-
             # num genes
+            genome.proviral_length = r["proviral_length"]
             genome.total_genes = r["total_genes"]
             genome.viral_genes = r["viral_genes"]
             genome.host_genes = r["host_genes"]
-
-            # warning
+            # add warnings
             if int(genome.viral_genes) == 0:
                 genome.warnings.append("no viral genes detected")
-            if int(genome.host_genes) > int(genome.viral_genes) > 0:
-                genome.warnings.append("microbial genes > viral genes")
             if r["region_types"].count("viral") > 1:
                 genome.warnings.append(">1 viral region detected")
-
-            # complete prophage
-            if r["region_types"] == "host,viral,host":
-                genome.termini.append("complete-prophage")
-
-            # partial prophage
-            if "viral" in r["region_types"] and "host" in r["region_types"]:
+            # prophage
+            if r["provirus"] == "Yes":
                 genome.prophage = "Yes"
                 genome.contamination = round(
                     100.0 * int(r["host_length"]) / genome.length, 2
                 )
-
-            # entirely viral
-            elif "viral" in r["region_types"] and "host" not in r["region_types"]:
-                genome.prophage = "No"
-                genome.contamination = 0.0
-
-            # no viral region
-            # contamination could be 100% or 0%
             else:
                 genome.prophage = "No"
                 genome.contamination = 0.0
@@ -152,59 +96,63 @@ def main(args):
     if os.path.exists(p):
         for r in csv.DictReader(open(p), delimiter="\t"):
             genome = genomes[r["contig_id"]]
-
-            # med/high-confidence AAI-based estimate
-            if r["aai_confidence"] in ["high", "medium"]:
-                completeness = round(float(r["aai_completeness"]), 2)
-                genome.completeness = min([completeness, 100.0])
-                genome.method = "AAI-based"
-
-                # completeness warning
-                if completeness >= 120:
-                    ratio = round(completeness / 100, 2)
-                    genome.warnings.append(
-                        f"contig {ratio}x length of matched reference"
-                    )
-
+            genome.kmer_freq = r["kmer_freq"]
+            # add warnings
+            if float(genome.kmer_freq) >= 1.5:
+                genome.warnings.append("high kmer_freq may indicate large duplication")
+            if r["aai_confidence"] in ("high", "medium") and float(
+                r["contig_length"]
+            ) > 1.5 * float(r["aai_expected_length"]):
+                genome.warnings.append(
+                    "contig >1.5x longer than expected genome length"
+                )
+            # AAI-based esimtate (med/high-confidence)
+            if r["aai_confidence"] in ("high", "medium"):
+                genome.completeness = round(float(r["aai_completeness"]), 2)
+                genome.method = "AAI-based (%s-confidence)" % r["aai_confidence"]
             # HMM-based estimate
             elif r["hmm_completeness_lower"] != "NA":
-                genome.completeness = (
-                    f"{r['hmm_completeness_lower']}-to-{r['hmm_completeness_upper']}"
-                )
-                genome.method = "HMM-based"
+                genome.completeness = round(float(r["hmm_completeness_lower"]), 2)
+                genome.method = "HMM-based (lower-bound)"
+            # no completeness estimate whatsoever
+            else:
+                genome.completeness = "NA"
+                genome.method = "NA"
 
-    logger.info("[4/6] Reading results from repeats module...")
-    p = os.path.join(args["output"], "repeats.tsv")
-    if os.path.exists(p):
-        for r in csv.DictReader(open(p), delimiter="\t"):
-            if "contig_id" not in r:
-                r["contig_id"] = r["genome_id"]
-            genome = genomes[r["contig_id"]]
-            genome.copies = r["genome_copies"]
-
-            # copies warning
-            if float(genome.copies) >= 1.2:
-                genome.warnings.append(
-                    f"{genome.copies} genome copies may indicate assembly artifact"
-                )
-
-            # terminal repeat
-            if r["repeat_type"] != "NA":
-                genome.termini.append(r["repeat_length"] + "-bp-" + r["repeat_type"])
-                if r["repeat_flagged"] == "Yes":
-                    genome.warnings.append(
-                        f"repeat flagged due to {r['flagged_reason']}"
-                    )
+    logger.info("[4/6] Reading results from complete genomes module...")
+    p = os.path.join(args["output"], "complete_genomes.tsv")
+    for r in csv.DictReader(open(p), delimiter="\t"):
+        genome = genomes[r["contig_id"]]
+        if r["confidence_level"] in ("medium", "high"):
+            genome.complete = True
+            genome.complete_type = r["prediction_type"]
+        else:
+            genome.warnings.append(f"low-confidence {r['prediction_type']}")
 
     logger.info("[5/6] Classifying contigs into quality tiers...")
     for genome in genomes.values():
-        assign_quality_tier(genome)
+        if genome.complete:
+            genome.quality = "Complete"
+            genome.miuvig = "High-quality"
+        elif genome.completeness == "NA":
+            genome.quality = "Not-determined"
+            genome.miuvig = "Genome-fragment"
+        elif genome.completeness >= 90:
+            genome.quality = "High-quality"
+            genome.miuvig = "High-quality"
+        elif genome.completeness >= 50:
+            genome.quality = "Medium-quality"
+            genome.miuvig = "Genome-fragment"
+        elif genome.completeness < 50:
+            genome.quality = "Low-quality"
+            genome.miuvig = "Genome-fragment"
 
     logger.info("[6/6] Writing results...")
     header = [
         "contig_id",
         "contig_length",
-        "genome_copies",
+        "provirus",
+        "proviral_length",
         "gene_count",
         "viral_genes",
         "host_genes",
@@ -212,9 +160,9 @@ def main(args):
         "miuvig_quality",
         "completeness",
         "completeness_method",
+        "complete_genome_type",
         "contamination",
-        "provirus",
-        "termini",
+        "kmer_freq",
         "warnings",
     ]
     out = open(args["output"] + "/quality_summary.tsv", "w")
@@ -223,7 +171,8 @@ def main(args):
         row = [
             genome.id,
             genome.length,
-            genome.copies,
+            genome.prophage,
+            genome.proviral_length,
             genome.total_genes,
             genome.viral_genes,
             genome.host_genes,
@@ -231,10 +180,10 @@ def main(args):
             genome.miuvig,
             genome.completeness,
             genome.method,
+            genome.complete_type,
             genome.contamination,
-            genome.prophage,
-            ",".join(genome.termini),
-            "; ".join(["'" + _ + "'" for _ in genome.warnings]),
+            genome.kmer_freq,
+            "; ".join(genome.warnings),
         ]
         out.write("\t".join([str(_) for _ in row]) + "\n")
 

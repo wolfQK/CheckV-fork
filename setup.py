@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="checkv",
-    version="0.6.0",
+    version="0.7.0",
     packages=find_packages(),
     license="Modified BSD",
     description="Assess the quality of metagenome-assembled viral genomes.",
@@ -17,12 +17,7 @@ setup(
     python_requires=">=3.6",
     entry_points={"console_scripts": ["checkv=checkv.cli:cli"]},
     url="https://bitbucket.org/berkeleylab/checkv",
-    keywords=[
-        "bioinformatics",
-        "genomics",
-        "metagenomics",
-        "viromics"
-    ],
+    keywords=["bioinformatics", "genomics", "metagenomics", "viromics"],
     author="Stephen Nayfach, Antonio Pedro Camargo, Simon Roux",
     classifiers=[
         "Intended Audience :: Science/Research",

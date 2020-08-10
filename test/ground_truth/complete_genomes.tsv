@@ -1,0 +1,6 @@
+contig_id	contig_length	prediction_type	confidence_level	confidence_reason	repeat_length	repeat_count
+2013338002_____MeugFWYF_C6321	14082	ITR	low	Too many ambiguous bases in TR	82	2
+2013843002_____DCKB1_C1454	36570	ITR	low	Too many ambiguous bases in TR	39	10
+2013843002_____DCKB1_C2382	81346	ITR	low	Too many ambiguous bases in TR	518	2
+2013843002_____DCKB1_C3067	6913	ITR	low	Too many ambiguous bases in TR	46	5
+2013843002_____DCKB1_C717	26277	ITR	low	Too many ambiguous bases in TR	46	10

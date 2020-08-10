@@ -14,9 +14,9 @@ usage: checkv <program> [options]
 
 programs:
     end_to_end          run full pipeline to estimate completeness, contamination, and identify closed genomes
-    contamination       estimate host contamination for integrated proviruses
+    contamination       identify and remove host contamination on integrated proviruses
     completeness        estimate completeness for genome fragments
-    repeats             identify terminal repeats & estimate genome copy number
+    complete_genomes    identify complete genomes based on terminal repeats and flanking host regions
     quality_summary     summarize results across modules
     download_database   download the latest version of CheckV's database
     update_database     update CheckV's database with your own complete genomes""",
@@ -69,14 +69,14 @@ programs:
     )
     checkv.completeness.fetch_arguments(completeness_parser)
 
-    repeats_parser = subparsers.add_parser(
-        "repeats",
+    complete_genomes_parser = subparsers.add_parser(
+        "complete_genomes",
         usage=argparse.SUPPRESS,
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="""Identify terminal repeats & estimate genome copy number
-\nusage: checkv repeats <input> <output> [options]""",
+        description="""Identify complete genomes based on terminal repeats and flanking host regions
+\nusage: checkv complete_genomes <input> <output> [options]""",
     )
-    checkv.repeats.fetch_arguments(repeats_parser)
+    checkv.complete_genomes.fetch_arguments(complete_genomes_parser)
 
     summary_parser = subparsers.add_parser(
         "quality_summary",
@@ -97,8 +97,8 @@ programs:
         elif sys.argv[1] == "update_database":
             update_database_parser.print_help()
             sys.exit(0)
-        elif sys.argv[1] == "repeats":
-            repeats_parser.print_help()
+        elif sys.argv[1] == "complete_genomes":
+            complete_genomes.print_help()
             sys.exit(0)
         elif sys.argv[1] == "completeness":
             completeness_parser.print_help()

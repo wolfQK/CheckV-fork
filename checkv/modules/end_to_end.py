@@ -63,9 +63,9 @@ def main(args):
 
     completeness.main(args)
 
-    from checkv import repeats
+    from checkv import complete_genomes
 
-    repeats.main(args)
+    complete_genomes.main(args)
 
     from checkv import quality_summary
 
