@@ -6,13 +6,66 @@ The pipeline can be broken down into 4 main steps:
 
 ![](https://bitbucket.org/berkeleylab/checkv/raw/657fde9b1c696185a399456fbcbb4ca82066abb6/pipeline.png)
 
-**A: Remove host contamination.** CheckV identifies and removes non-viral regions on proviruses. Genes are first annotated based on comparison to a custom database of HMMs that are highly specific to either viral or microbial proteins. Next, the program compares the gene annotations and GC content between a pair of adjacent gene windows. This information is used to compute a score at each intergenic position and identify host-virus boundaries.
+**A: Remove host contamination on proviruses**  
 
-**B: Estimate genome completeness.** CheckV estimates genome completeness in two stages. First, proteins are compared to the CheckV genome database using AAI (average amino acid identity), completeness is computed as a simple ratio between the contig length (or viral region length for proviruses) and the length of matched reference genomes, and a confidence level is reported. In some cases, a contig won't have a high- or medium-confidence estimate based on AAI. In these cases, a more sensitive but less accurate approach is used based on HMMs shared between the contig and CheckV reference genomes (ANI: average nucleotide identity; AF: alignment fraction).
+* Genes are first annotated as viral or microbial based on comparison to a custom database of HMMs  
+* CheckV scans over the contig (5' to 3') comparing gene annotations and GC content between a pair of adjacent gene windows
+* This information is used to compute a score at each intergenic position and identify host-virus breakpoints
+* Host-virus breakpoints are identified with:
+	* High scores (>1.2)
+	* A minimum of 2 host-specific genes in the putative host region (for contigs with >=10 genes)
+	* A minimum of 2 virus-specific genes in the putative viral region (for contigs with >=10 genes)
+	* A minimum of 30% genes annotated as microbial in the putative host region
 
-**C: Predict closed genomes.** Closed genomes are identified based either on direct terminal repeats (DTRs; often indicating a circular sequence), flanking virus-host boundaries (indicating a complete prophage), or inverted terminal repeats (ITRs; believed to facilitate circularization and recombination). Whenever possible, these predictions are validated based on the estimated completeness obtained in B (e.g. completeness >90%). DTRs are the most reliable and most common indicator of complete genomes.
+**B: Estimate genome completeness (2 algorithms)** 
 
-**D: Summarize quality.** Based on the results of A-C, CheckV generates a report file and assigns query contigs to one of five quality tiers: complete, high-quality (>90% completeness), medium-quality (50-90% completeness), low-quality (<50% completeness), or undetermined quality. These quality tiers are consistent with and expand upon those outlined in the MIUViG standards.
+* AAI-based approach (accurate point estimate for genome completeness; pictured above)
+	* First, proteins are compared to the CheckV genome database using AAI (average amino acid identity)
+	* After identifying the top hits, completeness is computed as a ratio between the contig length (or viral region length for proviruses) and the length of matched reference genomes
+	* A confidence level is reported based on the strength of the alignment and the length of the contig
+	* Generally, high- and medium-confidence estimates are quite accurate and can be trusted
+* HMM-based approach (estimated range for genome completeness)
+	* Highly novel viruses may not match a CheckV genome with sufficient AAI (i.e. low-confidence estimate)
+	* In these cases CheckV identifies the viral HMMs on the contig (see panel A) and compares the contig length with reference genomes sharing the same HMMs
+	* CheckV then returns the estimated range for genome completeness (e.g. 35% to 60% completeness), which represents the 90% confidence interval based on the distribution of lengths of reference genomes with the same viral HMMs
+
+**C: Predict closed genomes (3 signatures)**
+
+* Direct terminal repeats (DTRs) 
+	* Repeated sequence of >20-bp at start/end of contig
+	* Most trusted signature in our experience
+	* May indicate circular genome or linear genome replicated from a circular template (i.e. concatamer)
+* Proviruses 
+	* Viral region with predicted host boundaries at 5' and 3' ends (see panel A)
+	* Note: CheckV will not detect proviruses if host regions have already been removed (e.g. using VIBRANT or VirSorter)
+* Inverted terminal repeats (ITRs)
+ 	* Repeated sequence of >20-bp at start/end of contig (3' repeat is inverted)
+	* Least trusted signature in our experience 
+
+CheckV will also report a confidence level based on comparison to completeness estimates (panel B):  
+
+* High-confidence: >90% estimated completeness
+* Medium-confidence: 80-90% estimated completeness
+* Low-confidence: <80% estimated completeness
+
+For DTRs and ITRs, CheckV performs some additional filtering/checks:
+
+* Ambiguous bases in repeat (e.g. "NNNNN"): <= 20% of repeat sequence with Ns
+* Mode base frequency in repeat (e.g. "AAAAA"): <= 75% of repeat sequence composed of single base 
+* Maximum occurences of repeat sequence: <= 8 times per contig (removes highly repetetive sequences)
+* Maximum kmer-frquency: <= 1.5 (removes contigs with the same genome repeated back-to-back)
+
+
+**D: Summarize quality.** 
+
+Based on the results of A-C, CheckV generates a report file and assigns query contigs to one of five quality tiers (consistent with and expand upon the MIUViG quality tiers):
+ 
+* Complete (high- or medium-confidence predictions; see panel C)
+* High-quality (>90% completeness)
+* Medium-quality (50-90% completeness)
+* Low-quality (<50% completeness)
+* Undetermined quality
+
 
 ## Installation
 
@@ -32,7 +85,6 @@ pip install checkv
 
 If you decide to install CheckV via `pip`, make sure you also have the following external dependencies installed:
 
-- BLAST+ (v2.5.0)
 - DIAMOND (v0.9.30)
 - HMMER (v3.3)
 - Prodigal (v2.6.3)
@@ -109,7 +161,7 @@ pytest --database=/path/to/checkv-db --threads=16
 
 This contains integrated results from the three main modules and should be the main output referred to. Below is an example to demonstrate the type of results you can expect in your data:
 
-contig_id | contig\_length | 	provirus | 	proviral\_length | 	gene_count | 	viral_genes | 	host_genes | 	checkv_quality | 	miuvig_quality | 	completeness | 	completeness\_method | 	complete\_genome_type | 	contamination | 	kmer_freq | 	warnings |     
+| contig_id | contig\_length | 	provirus | 	proviral\_length | 	gene_count | 	viral_genes | 	host_genes | 	checkv_quality | 	miuvig_quality | 	completeness | 	completeness\_method | 	complete\_genome_type | 	contamination | 	kmer_freq | 	warnings |     
 |---------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|  
 | 1 | 	5325 | 	No | 	NA | 	11 | 	0 | 	2 | 	Not-determined | 	Genome-fragment | 	NA | 	NA | 	NA | 	0 | 	1 | 	no viral genes detected | 
 | 2 | 	41803 | 	No | 	NA | 	72 | 	27 | 	1 | 	Low-quality | 	Genome-fragment | 	21.99 | 	AAI-based (medium-confidence) | 	NA | 	0 | 	1 | flagged DTR	 | 

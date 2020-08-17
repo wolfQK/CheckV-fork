@@ -59,7 +59,6 @@ def main(args):
         genome.host_genes = "NA"
         genome.completeness = "NA"
         genome.complete = False
-        genome.complete_type = "NA"
         genome.method = "NA"
         genome.warnings = []
         genomes[genome.id] = genome
@@ -125,7 +124,8 @@ def main(args):
         genome = genomes[r["contig_id"]]
         if r["confidence_level"] in ("medium", "high"):
             genome.complete = True
-            genome.complete_type = r["prediction_type"]
+            genome.completeness = 100.0
+            genome.method = "%s (%s-confidence)" % (r["prediction_type"], r["confidence_level"])
         else:
             genome.warnings.append(f"low-confidence {r['prediction_type']}")
 
@@ -160,7 +160,6 @@ def main(args):
         "miuvig_quality",
         "completeness",
         "completeness_method",
-        "complete_genome_type",
         "contamination",
         "kmer_freq",
         "warnings",
@@ -180,7 +179,6 @@ def main(args):
             genome.miuvig,
             genome.completeness,
             genome.method,
-            genome.complete_type,
             genome.contamination,
             genome.kmer_freq,
             "; ".join(genome.warnings),

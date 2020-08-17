@@ -47,13 +47,6 @@ def fetch_arguments(parser):
         help="Max occurences of TR per contig (8)",
     )
     parser.add_argument(
-        "--tr_max_dust",
-        type=float,
-        default=0.50,
-        metavar="FLOAT",
-        help="Max fraction of TR classified as low complexity per contig (0.50)",
-    )
-    parser.add_argument(
         "--tr_max_ambig",
         type=float,
         default=0.20,
@@ -83,7 +76,6 @@ def set_defaults(args):
     key_values = [
         ("tr_min_len", 20),
         ("tr_max_count", 8),
-        ("tr_max_dust", 0.5),
         ("tr_max_ambig", 0.2),
         ("tr_max_basefreq", 0.70),
         ("kmer_max_freq", 1.5),
@@ -152,7 +144,6 @@ def main(args):
     program_start = time.time()
     logger = utility.get_logger(args["quiet"])
     set_defaults(args)
-    utility.check_executables(["dustmasker"])
     args["tmp"] = os.path.join(args["output"], "tmp")
     if not os.path.exists(args["output"]):
         os.makedirs(args["output"])
@@ -198,13 +189,10 @@ def main(args):
             genome.tr.type = "DTR"
             genome.tr.seq = dtr
             genome.tr.length = len(dtr)
-            genome.tr.dust = 0.0
         else:
             genome.tr.type = "ITR"
             genome.tr.seq = itr
             genome.tr.length = len(itr)
-            genome.tr.dust = 0.0
-
     logger.info("[4/7] Filtering terminal repeats...")
     # mode_freq, n_freq, repeat counts
     for genome in genomes.values():
@@ -221,14 +209,6 @@ def main(args):
                 f.write(
                     ">" + genome.tr.type + "_" + genome.id + "\n" + genome.tr.seq + "\n"
                 )
-    # run dustmasker
-    args["dustmaskerout"] = os.path.join(args["tmp"], "dustmasker.txt")
-    utility.run_dustmasker(args["tr_path"], args["dustmaskerout"])
-    for line in open(args["dustmaskerout"]):
-        row, start, end = line[1:].split()
-        type, genome_id = row.split("_", 1)
-        dust_length = int(end) - int(start) + 1
-        genomes[genome_id].tr.dust = 1.0 * dust_length / len(genomes[genome_id].tr.seq)
     # flag repeats based on user parameters
     for genome in genomes.values():
         if genome.tr.type is not None:
@@ -239,9 +219,6 @@ def main(args):
                 genome.flagged = True
                 genome.reason = "Repetetive TR sequence"
             elif genome.tr.mode_freq > args["tr_max_basefreq"]:
-                genome.flagged = True
-                genome.reason = "Low complexity TR"
-            elif genome.tr.dust > args["tr_max_dust"]:
                 genome.flagged = True
                 genome.reason = "Low complexity TR"
             else:
@@ -261,6 +238,7 @@ def main(args):
     logger.info("[6/7] Checking genome for large duplications...")
     path = os.path.join(args["output"], "completeness.tsv")
     for r in csv.DictReader(open(path), delimiter="\t"):
+        genomes[r["contig_id"]].kmer_freq = float(r["kmer_freq"])
         if float(r["kmer_freq"]) > args["kmer_max_freq"]:
             genomes[r["contig_id"]].flagged = True
             genomes[r["contig_id"]].reason = "Multiple genome copies detected"
@@ -270,11 +248,16 @@ def main(args):
     header = [
         "contig_id",
         "contig_length",
+        "kmer_freq",
         "prediction_type",
         "confidence_level",
         "confidence_reason",
         "repeat_length",
         "repeat_count",
+        "repeat_n_freq",
+        "repeat_mode_base_freq",
+        "repeat_seq",
+        
     ]
     out.write("\t".join(header) + "\n")
     for genome in genomes.values():
@@ -283,10 +266,18 @@ def main(args):
             type = genome.tr.type
             repeat_length = genome.tr.length
             repeat_count = genome.tr.count
+            repeat_nfreq = genome.tr.n_freq
+            repeat_modefreq = genome.tr.mode_freq
+            repeat_seq = genome.tr.seq
+            kmer_freq = genome.kmer_freq
         elif genome.complete_provirus == "Yes":
             type = "Provirus"
             repeat_length = "NA"
             repeat_count = "NA"
+            repeat_nfreq = "NA"
+            repeat_modefreq = "NA"
+            repeat_seq = "NA"
+            kmer_freq = genome.kmer_freq
         else:
             continue
 
@@ -294,11 +285,15 @@ def main(args):
         row = [
             genome.id,
             genome.length,
+            kmer_freq,
             type,
             confidence,
             evidence,
             repeat_length,
             repeat_count,
+            repeat_nfreq,
+            repeat_modefreq,
+            repeat_seq
         ]
         out.write("\t".join([str(_) for _ in row]) + "\n")
 

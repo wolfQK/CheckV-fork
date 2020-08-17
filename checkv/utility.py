@@ -111,7 +111,7 @@ def check_database(dbdir):
     """check existence of database files"""
     if dbdir is None:
         if "CHECKVDB" not in os.environ:
-            msg = "Error: database dir not specified\nUse -d or set CHECKDB environmental variable"
+            msg = "Error: database dir not specified\nUse -d or set CHECKVDB environmental variable"
             sys.exit(msg)
         else:
             dbdir = os.environ["CHECKVDB"]
