@@ -125,7 +125,10 @@ def main(args):
         if r["confidence_level"] in ("medium", "high"):
             genome.complete = True
             genome.completeness = 100.0
-            genome.method = "%s (%s-confidence)" % (r["prediction_type"], r["confidence_level"])
+            genome.method = "%s (%s-confidence)" % (
+                r["prediction_type"],
+                r["confidence_level"],
+            )
         else:
             genome.warnings.append(f"low-confidence {r['prediction_type']}")
 

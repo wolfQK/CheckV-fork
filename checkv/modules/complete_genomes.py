@@ -257,7 +257,6 @@ def main(args):
         "repeat_n_freq",
         "repeat_mode_base_freq",
         "repeat_seq",
-        
     ]
     out.write("\t".join(header) + "\n")
     for genome in genomes.values():
@@ -293,7 +292,7 @@ def main(args):
             repeat_count,
             repeat_nfreq,
             repeat_modefreq,
-            repeat_seq
+            repeat_seq,
         ]
         out.write("\t".join([str(_) for _ in row]) + "\n")
 
