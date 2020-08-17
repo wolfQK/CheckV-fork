@@ -182,7 +182,7 @@ In the example, above there are results for 6 viral contigs:
 
 A detailed overview of how completeness was estimated:
 
-contig_id  | contig_length  | proviral_length  | aai\_expected_length  | aai_completeness  | aai_confidence  | aai_error  | aai\_num_hits  | aai\_top_hit  | aai_id  | aai_af  | hmm\_completeness_lower  | hmm\_completeness_upper  | hmm_hits  | 
+| contig_id  | contig_length  | proviral_length  | aai\_expected_length  | aai_completeness  | aai_confidence  | aai_error  | aai\_num_hits  | aai\_top_hit  | aai_id  | aai_af  | hmm\_completeness_lower  | hmm\_completeness_upper  | hmm_hits  | 
 |---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|
 1  | 9837  | 5713  | 53242.8  | 10.7  | high  | 3.7  | 10  | DTR_517157  | 78.5  | 34.6  | 5  | 15  | 4  | 
 2  | 39498  | NA  | 37309  | 100.0  | medium  | 7.7  | 11  | DTR_357456  | 45.18  | 30.46  | 75  | 100 | 22 |
@@ -200,7 +200,7 @@ In the example, above there are results for 4 viral contigs:
 
 A detailed overview of how contamination was estimated:
 
-contig_id | 	contig_length | 	total_genes | 	viral_genes | 	host_genes | 	provirus | 	proviral_length | 	host_length | 	region_types | 	region_lengths | 	region\_coords_bp | 	region\_coords_genes | 	region\_viral_genes | 	region\_host_genes |  
+| contig_id | 	contig_length | 	total_genes | 	viral_genes | 	host_genes | 	provirus | 	proviral_length | 	host_length | 	region_types | 	region_lengths | 	region\_coords_bp | 	region\_coords_genes | 	region\_viral_genes | 	region\_host_genes |  
 |---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|
 | 1 | 	98051 | 	158 | 	27 | 	1 | 	No | 	NA | 	NA | 	NA | 	NA | 	NA | 	NA | 	NA | 	NA | 
 | 2 | 	38254 | 	54 | 	23 | 	2 | 	Yes | 	36072 | 	2182 | 	host,viral | 	1-2182,2183-38254 | 	1-2182,2183-38254 | 	1-4,5-54 | 	0,23 | 	2,0 | 
