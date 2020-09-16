@@ -276,3 +276,16 @@ Then you can look up the taxonomy of the top hit.
 If the top hit starts with 'DTR' look here at the 'lineage' field in 'checkv_circular.tsv' database file. 
 You can also look at 'habitat' field here as well. 
 For GenBank references starting with 'GCA' look at the 'vog_clade' or 'lineage' field in 'checkv_genbank.tsv' database file.
+
+## Supporting code
+
+**Rapid genome clustering based on pairwise ANI**
+
+Fist, use megablast from blast+ package to perform all-vs-all blastn of sequences: 
+`blastn -query <my_seqs.fna> -db <my_db> -outfmt '6 std qlen slen' -max_targets 10000 -percent_id 90 -o <my_blast.tsv>`
+
+Next, calculate pairwise ANI by combining local alignments between sequence pairs:  
+`anicalc.py -i <my_blast.tsv> -o <my_ani.tsv>` 
+
+Finally, perform UCLUST-like clustering:
+`aniclust.py --fna <my_seqs.fna> --ani <my_ani.tsv> --out <my_clusters.tsv> --min_ani 95 --min_qcov 0 --min_tcov 70`
