@@ -69,13 +69,15 @@ Based on the results of A-C, CheckV generates a report file and assigns query co
 
 ## Installation
 
-There are two methods to install CheckV:
+There are three methods to install CheckV:
 
 - Using `conda`:
 
 ```bash
 conda install -c conda-forge -c bioconda checkv
 ```
+
+- Using `docker`: see section below  
 
 - Using `pip`:
 
@@ -93,7 +95,7 @@ The versions listed above were the ones that were properly tested. Different ver
 
 ### CheckV database
 
-Whichever method you choose to install CheckV you will need to download the database in order to use it:
+If you install using `conda` or `pip` you will need to download the database:
 
 ```bash
 checkv download_database ./
@@ -130,13 +132,28 @@ checkv complete_genomes input_file.fna output_directory
 checkv quality_summary input_file.fna output_directory
 ```
 
-- Using a single command to run the full pipeline (available in next release):
+- Using a single command to run the full pipeline:
 
 ```bash
 checkv end_to_end input_file.fna output_directory -t 16
 ```
 
 - For a full listing of checkv programs and options, use: `checkv -h` and `checkv <program> -h`
+
+## Docker usage
+
+- Pull the image (including the database)
+
+```bash
+docker pull snayfach/checkv-0.7.0
+```
+
+- Run the image
+
+```bash
+docker run -ti --rm -v "$(pwd):/app" snayfach/checkv-0.7.0 end_to_end input_file.fna output_directory -t 16
+```
+
 
 ## Automated testing
 
