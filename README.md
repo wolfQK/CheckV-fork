@@ -1,5 +1,11 @@
 ![](https://bitbucket.org/berkeleylab/checkv/raw/6d4448f738ac8549551c8ef9511afb05bc394813/logo.png)
 
+[![PyPI](https://img.shields.io/pypi/v/checkv.svg?label=PyPI&color=green)](https://pypi.python.org/pypi/checkv)
+[![Conda](https://img.shields.io/conda/vn/bioconda/checkv.svg?label=Conda&color=green)](https://anaconda.org/bioconda/checkv)
+[![PyPI downloads](https://img.shields.io/pypi/dm/checkv?label=PyPI%20downloads&color=blue)](https://pypi.python.org/pypi/checkv)
+[![Conda downloads](https://img.shields.io/conda/dn/bioconda/checkv.svg?label=Conda%20downloads&color=blue)](https://anaconda.org/bioconda/checkv)
+[![Docker pulls](https://img.shields.io/docker/pulls/snayfach/checkv-0.7.0.svg?label=Docker%20pulls&color=blue)](https://hub.docker.com/r/snayfach/checkv-0.7.0)
+
 CheckV is a fully automated command-line pipeline for assessing the quality of single-contig viral genomes, including identification of host contamination for integrated proviruses, estimating completeness for genome fragments, and identification of closed genomes.
 
 The pipeline can be broken down into 4 main steps:
