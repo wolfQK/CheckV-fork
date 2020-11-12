@@ -93,7 +93,7 @@ pip install checkv
 
 If you decide to install CheckV via `pip`, make sure you also have the following external dependencies installed:
 
-- DIAMOND (v0.9.30)
+- DIAMOND (v2.0.4)
 - HMMER (v3.3)
 - Prodigal (v2.6.3)
 
