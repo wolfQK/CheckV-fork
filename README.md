@@ -157,7 +157,7 @@ docker pull snayfach/checkv-0.7.0
 - Run the image
 
 ```bash
-docker run -ti --rm -v "$(pwd):/app" snayfach/checkv-0.7.0 end_to_end input_file.fna output_directory -t 16
+docker run -ti --rm -u $(id -u) -v "$(pwd):/app" snayfach/checkv-0.7.0 end_to_end input_file.fna output_directory -t 16
 ```
 
 
