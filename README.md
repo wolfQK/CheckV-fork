@@ -117,7 +117,7 @@ tar -zxvf checkv-db-v0.6.tar.gz
 And update your environment (optional):
 
 ```bash
-export CHECKVDB=/path/to/checkv-db
+export CHECKVDB=/path/to/checkv-db-v0.6
 ```
 
 Some users may wish to update the database using their own complete genomes:
