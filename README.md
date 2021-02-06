@@ -110,14 +110,14 @@ checkv download_database ./
 Or (to download and extract manually):
 
 ```bash
-wget https://portal.nersc.gov/CheckV/checkv-db-v0.6.tar.gz
-tar -zxvf checkv-db-v0.6.tar.gz
+wget https://portal.nersc.gov/CheckV/checkv-db-v1.0.tar.gz
+tar -zxvf checkv-db-v1.0.tar.gz
 ```
 
 And update your environment (optional):
 
 ```bash
-export CHECKVDB=/path/to/checkv-db-v0.6
+export CHECKVDB=/path/to/checkv-db-v1.0
 ```
 
 Some users may wish to update the database using their own complete genomes:
