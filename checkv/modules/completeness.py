@@ -88,17 +88,20 @@ def yield_query_alns(path):
     """
     Yields list of formatted blastp alignments per 'qname'
     """
-
-    handle = utility.parse_blastp(path)
-    alns = [next(handle)]
-    query = alns[0]["qname"].rsplit("_", 1)[0]
-    for r in handle:
-        if r["qname"].rsplit("_", 1)[0] != query:
-            yield query, alns
-            alns = []
-            query = r["qname"].rsplit("_", 1)[0]
-        alns.append(r)
-    yield query, alns
+    try:
+        handle = utility.parse_blastp(path)
+        alns = [next(handle)]
+        query = alns[0]["qname"].rsplit("_", 1)[0]
+        for r in handle:
+            if r["qname"].rsplit("_", 1)[0] != query:
+                yield query, alns
+                alns = []
+                query = r["qname"].rsplit("_", 1)[0]
+            alns.append(r)
+        yield query, alns
+    except:
+        return
+        yield
 
 
 def init_database(args):
