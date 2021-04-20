@@ -1,9 +1,7 @@
 import argparse
 import csv
-import logging
 import os
 import shutil
-import subprocess as sp
 import time
 import numpy as np
 import checkv

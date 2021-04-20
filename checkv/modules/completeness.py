@@ -1,12 +1,9 @@
 import argparse
 import bisect
 import csv
-import logging
 import operator
 import os
 import shutil
-import subprocess as sp
-import sys
 import time
 import numpy as np
 import checkv
