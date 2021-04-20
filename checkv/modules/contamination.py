@@ -452,7 +452,7 @@ def main(args):
                 host_length = sum(
                     r["length"] for r in genome.regions if r["type"] == "host"
                 )
-                region_types = ",".join([r["type"] for r in genome.regions])
+                region_types = ",".join(r["type"] for r in genome.regions)
                 region_lengths = ",".join([str(r["length"]) for r in genome.regions])
                 region_coords_bp = ",".join(
                     [
@@ -466,12 +466,8 @@ def main(args):
                         for r in genome.regions
                     ]
                 )
-                region_viral_genes = ",".join(
-                    [str(r["viral_genes"]) for r in genome.regions]
-                )
-                region_host_genes = ",".join(
-                    [str(r["host_genes"]) for r in genome.regions]
-                )
+                region_viral_genes = ",".join(str(r["viral_genes"]) for r in genome.regions)
+                region_host_genes = ",".join(str(r["host_genes"]) for r in genome.regions)
                 row += ["Yes", viral_length, host_length]
                 row += [
                     region_types,
@@ -482,7 +478,7 @@ def main(args):
                 row += [region_viral_genes, region_host_genes]
             else:
                 row += ["No"] + ["NA"] * 8
-            out.write("\t".join([str(_) for _ in row]) + "\n")
+            out.write("\t".join(str(_) for _ in row) + "\n")
 
     with open(os.path.join(args["tmp"], "gene_features.tsv"), "w") as out:
         header = [
