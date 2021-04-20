@@ -5,6 +5,7 @@ import os
 import string
 import sys
 import time
+import shutil
 import checkv
 from checkv import utility
 
@@ -21,6 +22,12 @@ def fetch_arguments(parser):
         "input", type=str, help="Input viral sequences in FASTA format",
     )
     parser.add_argument("output", type=str, help="Output directory")
+    parser.add_argument(
+        "--remove_tmp",
+        action="store_true",
+        default=False,
+        help="Delete intermediate files from the output directory",
+    )
     parser.add_argument(
         "--quiet", action="store_true", default=False, help="Suppress logging messages",
     )
@@ -187,6 +194,9 @@ def main(args):
             "; ".join(genome.warnings),
         ]
         out.write("\t".join([str(_) for _ in row]) + "\n")
+
+    if args["remove_tmp"]:
+        shutil.rmtree(args["tmp"])
 
     logger.info("Run time: %s seconds" % round(time.time() - program_start, 2))
     logger.info("Peak mem: %s GB" % round(utility.max_mem_usage(), 2))

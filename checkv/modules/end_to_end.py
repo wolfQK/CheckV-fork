@@ -29,6 +29,12 @@ def fetch_arguments(parser):
         help="Reference database path. By default the CHECKVDB environment variable is used",
     )
     parser.add_argument(
+        "--remove_tmp",
+        action="store_true",
+        default=False,
+        help="Delete intermediate files from the output directory",
+    )
+    parser.add_argument(
         "-t",
         dest="threads",
         type=int,
@@ -70,3 +76,6 @@ def main(args):
     from checkv import quality_summary
 
     quality_summary.main(args)
+
+    if args["remove_tmp"]:
+        shutil.rmtree(args["tmp"])
