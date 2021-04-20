@@ -153,7 +153,8 @@ def main(args):
         elif genome.completeness >= 50:
             genome.quality = "Medium-quality"
             genome.miuvig = "Genome-fragment"
-        elif genome.completeness < 50:
+        # completeness < 50:
+        else:
             genome.quality = "Low-quality"
             genome.miuvig = "Genome-fragment"
 
