@@ -408,7 +408,7 @@ def main(args):
         for genome in genomes.values():
             if len(genome.regions) > 0:
                 viral_regions = [r for r in genome.regions if r["type"] == "viral"]
-                if len(viral_regions) == 0:
+                if not viral_regions:
                     viral_regions = genome.regions
                 for i, r in enumerate(viral_regions):
                     header = (
