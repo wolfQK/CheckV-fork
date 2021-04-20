@@ -250,7 +250,7 @@ def compute_aai(blastp_path, out_path, genomes, genes, refs):
             top_score = max(_[-1] for _ in aai)
             for row in aai:
                 score = row[-1]
-                out.write("\t".join([str(_) for _ in row]) + "\n")
+                out.write("\t".join(str(_) for _ in row) + "\n")
 
 
 def store_aai(args, genomes, exclude, refs):
