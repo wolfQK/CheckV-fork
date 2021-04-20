@@ -417,13 +417,17 @@ def hmm_based_completeness(args, genomes, hmms, annotation_path):
             cv = hmms[hmm]["cv"]
             weight = min([1 / cv, 50]) if cv != 0 else 50
             comps.append([weight, comp_q1, comp_q2])
-        weight_total = sum([weight for weight, comp_q1, comp_q2 in comps])
+        weight_total = sum(weight for weight, comp_q1, comp_q2 in comps)
         comp_lower = (
-            sum([weight * comp_q1 for weight, comp_q1, comp_q2 in comps]) / weight_total
+            sum(weight * comp_q1 for weight, comp_q1, comp_q2 in comps)
+            / weight_total
         )
+
         comp_upper = (
-            sum([weight * comp_q2 for weight, comp_q1, comp_q2 in comps]) / weight_total
+            sum(weight * comp_q2 for weight, comp_q1, comp_q2 in comps)
+            / weight_total
         )
+
         genome.hmm_completeness = (comp_lower, comp_upper)
 
 
