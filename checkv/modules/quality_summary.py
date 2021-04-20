@@ -191,7 +191,7 @@ def main(args):
             genome.kmer_freq,
             "; ".join(genome.warnings),
         ]
-        out.write("\t".join([str(_) for _ in row]) + "\n")
+        out.write("\t".join(str(_) for _ in row) + "\n")
 
     if args["remove_tmp"]:
         shutil.rmtree(args["tmp"])
