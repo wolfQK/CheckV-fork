@@ -96,8 +96,8 @@ def annotate_genes(hmm_info, genomes, genes, args):
 
     # 3. summarize hits
     for genome in genomes.values():
-        genome.count_viral = sum(1 for _ in genome.genes if genes[_].cat == 1)
-        genome.count_host = sum(1 for _ in genome.genes if genes[_].cat == -1)
+        genome.count_viral = sum(genes[_].cat == 1 for _ in genome.genes)
+        genome.count_host = sum(genes[_].cat == -1 for _ in genome.genes)
 
 
 def compute_delta(my_genes, s1, e1, s2, e2, gc_weight):
