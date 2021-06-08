@@ -98,7 +98,6 @@ def yield_query_alns(path):
         yield query, alns
     except:
         return
-        yield
 
 
 def init_database(args):
