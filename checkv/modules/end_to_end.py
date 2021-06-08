@@ -1,6 +1,6 @@
 import os
 import shutil
-from checkv import contamination, completeness, complete_genomes, quality_summary
+import checkv
 
 def fetch_arguments(parser):
     parser.set_defaults(func=main)
@@ -50,10 +50,10 @@ def main(args):
         shutil.rmtree(args["tmp"])
     args["restart"] = False
 
-    contamination.main(args)
-    completeness.main(args)
-    complete_genomes.main(args)
-    quality_summary.main(args)
+    checkv.contamination.main(args)
+    checkv.completeness.main(args)
+    checkv.complete_genomes.main(args)
+    checkv.quality_summary.main(args)
 
     if args["remove_tmp"]:
         shutil.rmtree(args["tmp"])
