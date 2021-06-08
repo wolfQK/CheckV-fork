@@ -98,7 +98,7 @@ programs:
             update_database_parser.print_help()
             sys.exit(0)
         elif sys.argv[1] == "complete_genomes":
-            complete_genomes.print_help()
+            complete_genomes_parser.print_help()
             sys.exit(0)
         elif sys.argv[1] == "completeness":
             completeness_parser.print_help()

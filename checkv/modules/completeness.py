@@ -1,12 +1,9 @@
 import argparse
 import bisect
 import csv
-import logging
 import operator
 import os
 import shutil
-import subprocess as sp
-import sys
 import time
 import numpy as np
 import checkv
@@ -253,7 +250,7 @@ def compute_aai(blastp_path, out_path, genomes, genes, refs):
             top_score = max(_[-1] for _ in aai)
             for row in aai:
                 score = row[-1]
-                out.write("\t".join([str(_) for _ in row]) + "\n")
+                out.write("\t".join(str(_) for _ in row) + "\n")
 
 
 def store_aai(args, genomes, exclude, refs):
@@ -420,13 +417,17 @@ def hmm_based_completeness(args, genomes, hmms, annotation_path):
             cv = hmms[hmm]["cv"]
             weight = min([1 / cv, 50]) if cv != 0 else 50
             comps.append([weight, comp_q1, comp_q2])
-        weight_total = sum([weight for weight, comp_q1, comp_q2 in comps])
+        weight_total = sum(weight for weight, comp_q1, comp_q2 in comps)
         comp_lower = (
-            sum([weight * comp_q1 for weight, comp_q1, comp_q2 in comps]) / weight_total
+            sum(weight * comp_q1 for weight, comp_q1, comp_q2 in comps)
+            / weight_total
         )
+
         comp_upper = (
-            sum([weight * comp_q2 for weight, comp_q1, comp_q2 in comps]) / weight_total
+            sum(weight * comp_q2 for weight, comp_q1, comp_q2 in comps)
+            / weight_total
         )
+
         genome.hmm_completeness = (comp_lower, comp_upper)
 
 

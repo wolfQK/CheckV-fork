@@ -1,6 +1,4 @@
-import argparse
 import csv
-import logging
 import os
 import string
 import sys
@@ -294,7 +292,7 @@ def main(args):
             repeat_modefreq,
             repeat_seq,
         ]
-        out.write("\t".join([str(_) for _ in row]) + "\n")
+        out.write("\t".join(str(_) for _ in row) + "\n")
 
     logger.info("Run time: %s seconds" % round(time.time() - program_start, 2))
     logger.info("Peak mem: %s GB" % round(utility.max_mem_usage(), 2))

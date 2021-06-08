@@ -1,9 +1,7 @@
 import argparse
 import csv
-import logging
 import os
 import shutil
-import subprocess as sp
 import time
 import numpy as np
 import checkv
@@ -98,8 +96,8 @@ def annotate_genes(hmm_info, genomes, genes, args):
 
     # 3. summarize hits
     for genome in genomes.values():
-        genome.count_viral = sum(1 for _ in genome.genes if genes[_].cat == 1)
-        genome.count_host = sum(1 for _ in genome.genes if genes[_].cat == -1)
+        genome.count_viral = sum(genes[_].cat == 1 for _ in genome.genes)
+        genome.count_host = sum(genes[_].cat == -1 for _ in genome.genes)
 
 
 def compute_delta(my_genes, s1, e1, s2, e2, gc_weight):
@@ -410,7 +408,7 @@ def main(args):
         for genome in genomes.values():
             if len(genome.regions) > 0:
                 viral_regions = [r for r in genome.regions if r["type"] == "viral"]
-                if len(viral_regions) == 0:
+                if not viral_regions:
                     viral_regions = genome.regions
                 for i, r in enumerate(viral_regions):
                     header = (
@@ -454,7 +452,7 @@ def main(args):
                 host_length = sum(
                     r["length"] for r in genome.regions if r["type"] == "host"
                 )
-                region_types = ",".join([r["type"] for r in genome.regions])
+                region_types = ",".join(r["type"] for r in genome.regions)
                 region_lengths = ",".join([str(r["length"]) for r in genome.regions])
                 region_coords_bp = ",".join(
                     [
@@ -468,12 +466,8 @@ def main(args):
                         for r in genome.regions
                     ]
                 )
-                region_viral_genes = ",".join(
-                    [str(r["viral_genes"]) for r in genome.regions]
-                )
-                region_host_genes = ",".join(
-                    [str(r["host_genes"]) for r in genome.regions]
-                )
+                region_viral_genes = ",".join(str(r["viral_genes"]) for r in genome.regions)
+                region_host_genes = ",".join(str(r["host_genes"]) for r in genome.regions)
                 row += ["Yes", viral_length, host_length]
                 row += [
                     region_types,
@@ -484,7 +478,7 @@ def main(args):
                 row += [region_viral_genes, region_host_genes]
             else:
                 row += ["No"] + ["NA"] * 8
-            out.write("\t".join([str(_) for _ in row]) + "\n")
+            out.write("\t".join(str(_) for _ in row) + "\n")
 
     with open(os.path.join(args["tmp"], "gene_features.tsv"), "w") as out:
         header = [
