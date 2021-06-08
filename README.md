@@ -184,6 +184,7 @@ pytest --database=/path/to/checkv-db --threads=16
 
 This contains integrated results from the three main modules and should be the main output referred to. Below is an example to demonstrate the type of results you can expect in your data:
 
+
 | contig_id | contig\_length | 	provirus | 	proviral\_length | 	gene_count | 	viral_genes | 	host_genes | 	checkv_quality | 	miuvig_quality | 	completeness | 	completeness\_method | 	complete\_genome_type | 	contamination | 	kmer_freq | 	warnings |     
 |---------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|  
 | 1 | 	5325 | 	No | 	NA | 	11 | 	0 | 	2 | 	Not-determined | 	Genome-fragment | 	NA | 	NA | 	NA | 	0 | 	1 | 	no viral genes detected | 
@@ -205,8 +206,9 @@ In the example, above there are results for 6 viral contigs:
 
 A detailed overview of how completeness was estimated:
 
+
 | contig_id  | contig_length  | proviral_length  | aai\_expected_length  | aai_completeness  | aai_confidence  | aai_error  | aai\_num_hits  | aai\_top_hit  | aai_id  | aai_af  | hmm\_completeness_lower  | hmm\_completeness_upper  | hmm_hits  | 
-|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|
+|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|
 1  | 9837  | 5713  | 53242.8  | 10.7  | high  | 3.7  | 10  | DTR_517157  | 78.5  | 34.6  | 5  | 15  | 4  | 
 2  | 39498  | NA  | 37309  | 100.0  | medium  | 7.7  | 11  | DTR_357456  | 45.18  | 30.46  | 75  | 100 | 22 |
 3  | 29224  | NA  | 44960.1  | 65.8  | low  | 15.2  | 17  | DTR_091230  | 39.74  | 19.54  | 52  | 70  | 10  | 
@@ -223,12 +225,13 @@ In the example, above there are results for 4 viral contigs:
 
 A detailed overview of how contamination was estimated:
 
+
 | contig_id | 	contig_length | 	total_genes | 	viral_genes | 	host_genes | 	provirus | 	proviral_length | 	host_length | 	region_types | 	region_lengths | 	region\_coords_bp | 	region\_coords_genes | 	region\_viral_genes | 	region\_host_genes |  
-|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|
-| 1 | 	98051 | 	158 | 	27 | 	1 | 	No | 	NA | 	NA | 	NA | 	NA | 	NA | 	NA | 	NA | 	NA | 
-| 2 | 	38254 | 	54 | 	23 | 	2 | 	Yes | 	36072 | 	2182 | 	host,viral | 	1-2182,2183-38254 | 	1-2182,2183-38254 | 	1-4,5-54 | 	0,23 | 	2,0 | 
-| 3 | 	6930 | 	9 | 	1 | 	2 | 	Yes | 	3023 | 	3907 | 	viral,host | 	3023,3907 | 	1-3023,3024-6930 | 	1-5,6-9 | 	1,0 | 	0,2 | 
-| 4 | 	101630 | 	103 | 	7 | 	24 | 	Yes | 	28170 | 	73460 | 	host,viral,host | 	46804,28170,26656 | 	1-46804,46805-74974,74975-101630 | 	1-43,44-85,86-103 | 	0,7,0 | 	13,0,11 | 
+|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|  
+| 1 | 	98051 | 	158 | 	27 | 	1 | 	No | 	NA | 	NA | 	NA | 	NA | 	NA | 	NA | 	NA | 	NA |   
+| 2 | 	38254 | 	54 | 	23 | 	2 | 	Yes | 	36072 | 	2182 | 	host,viral | 	1-2182,2183-38254 | 	1-2182,2183-38254 | 	1-4,5-54 | 	0,23 | 	2,0 |   
+| 3 | 	6930 | 	9 | 	1 | 	2 | 	Yes | 	3023 | 	3907 | 	viral,host | 	3023,3907 | 	1-3023,3024-6930 | 	1-5,6-9 | 	1,0 | 	0,2 |   
+| 4 | 	101630 | 	103 | 	7 | 	24 | 	Yes | 	28170 | 	73460 | 	host,viral,host | 	46804,28170,26656 | 	1-46804,46805-74974,74975-101630 | 	1-43,44-85,86-103 | 	0,7,0 | 	13,0,11 |   
 
 In the example, above there are results for 4 viral contigs:  
 
@@ -241,8 +244,9 @@ In the example, above there are results for 4 viral contigs:
 
 A detailed overview of putative complete genomes identified:
 
+
 | contig_id | 	contig_length | 	prediction_type | 	confidence_level | 	confidence_reason | 	repeat_length | 	repeat_count | 
-|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|
+|---------|---------|---------|---------|---------|---------|---------|
 | 1 | 	44824 | 	DTR | 	high | 	AAI-based completeness > 90% | 	253 | 	2 | 
 | 2 | 	38147 | 	DTR | 	low | 	Low complexity TR; Repetetive TR | 	20 | 	10 | 
 | 3 | 	67622 | 	DTR | 	low | 	Multiple genome copies detected | 	26857 | 	2 | 
@@ -277,10 +281,10 @@ A: CheckV determines sequence quality solely based on completeness. Host contami
 A: CheckV can estimate completeness but not contamination for these. You'll need to concatentate the contigs from each MAG into a single sequence prior to running CheckV.
 
 **Q: Can I use CheckV to predict (pro)viruses from whole (meta)genomes?**  
-A: Possibly, though this has not been tested.
+A: Possibly, though this has not been tested. 
 
 **Q: Can I use CheckV to remove false positive viral predictions?**  
-A: Probably, though this has not been tested.
+A: Probably, though this has not been tested. Sequences with at least 1 viral gene and more viral than host genes are likely to be true viruses.
 
 **Q: How should I handle putative "closed genomes" with no completeless estimate?**  
 A: In some cases, you won't be able to verify the completeness of a sequence with terminal repeats or provirus integration sites. DTRs are a fairly reliable indicator (>90% of the time) and can likely be trusted with no completeness estimate. However, complete proviruses and ITRs are much less reliable indicators, and therefore require >90% estimated completeness.
@@ -299,6 +303,9 @@ Then you can look up the taxonomy of the top hit.
 If the top hit starts with 'DTR' look here at the 'lineage' field in 'checkv_circular.tsv' database file. 
 You can also look at 'habitat' field here as well. 
 For GenBank references starting with 'GCA' look at the 'vog_clade' or 'lineage' field in 'checkv_genbank.tsv' database file.
+
+**Q: Why are sequences with 0 viral genes included in the CheckV output**  
+Currently, CheckV assumes that the input sequences represent viruses and attempts to estimate their quality. Some input sequences may be derived from bacteria, plasmids, or other sources, and may therefore have 0 viral genes detected.
 
 ## Supporting code
 
