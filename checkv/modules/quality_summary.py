@@ -41,6 +41,8 @@ def main(args):
     if not os.path.exists(args["tmp"]):
         os.makedirs(args["tmp"])
 
+    utility.check_fasta(args["input"], args["tmp"])
+
     for file in ["completeness.tsv", "complete_genomes.tsv"]:
         path = os.path.join(args["output"], file)
         if not os.path.exists(path):

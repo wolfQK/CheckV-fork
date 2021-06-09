@@ -26,7 +26,9 @@ def fetch_arguments(parser):
     parser.set_defaults(func=main)
     parser.set_defaults(program="completeness")
     parser.add_argument(
-        "input", type=str, help="Input nucleotide sequences in FASTA format",
+        "input",
+        type=str,
+        help="Input nucleotide sequences in FASTA format (.gz, .bz2 and .xz files are supported)",
     )
     parser.add_argument("output", type=str, help="Output directory")
     parser.add_argument(
@@ -447,6 +449,8 @@ def main(args):
         os.makedirs(args["output"])
     if not os.path.exists(args["tmp"]):
         os.makedirs(args["tmp"])
+
+    utility.check_fasta(args["input"], args["tmp"])
 
     logger.info(f"\nCheckV v{checkv.__version__}: completeness")
 

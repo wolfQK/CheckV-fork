@@ -11,6 +11,7 @@ import signal
 import subprocess as sp
 import sys
 import time
+from collections import Counter
 from enum import Enum, auto
 
 import kcounter
@@ -57,6 +58,23 @@ def get_logger(quiet):
         logging.basicConfig(level=logging.WARNING, format="%(message)s")
     return logging.getLogger()
 
+def check_fasta(path, tmp_dir):
+    checkpoint_file = os.path.join(tmp_dir, "input_validation_checkpoint")
+    if not os.path.isfile(checkpoint_file):
+        fasta_parser = SeqIO.parse(path, "fasta")
+        if not any(fasta_parser):
+            sys.stderr.write("You input FASTA file is empty or not properly formatted.")
+            sys.exit()
+        else:
+            fasta_parser = SeqIO.parse(path, "fasta")
+            seq_id_counter = Counter([record.id for record in fasta_parser])
+            repeated_seq_ids = [i for i, j in seq_id_counter.items() if j > 1]
+            if repeated_seq_ids:
+                sys.stderr.write(f"Please remove duplicated sequence IDs from the input FASTA file: {', '.join(repeated_seq_ids)}")
+                sys.exit()
+            else:
+                with open(checkpoint_file, "w") as fout:
+                    pass
 
 def check_executables(requirements):
     fails = 0
