@@ -297,8 +297,8 @@ A: While it is not possible to estimate completeness for these, you may choose t
 
 **Q: Does CheckV taxonomically annotate my sequences?**  
 A: CheckV does not perform taxonomic annotation of viral contigs. However, some taxonomic information is available for users to find on their own.
-You can implement this yourself by looking at the taxonomy (and also the source environment too) for the top hit to the genome database. 
-First, you can find the top hit info from the 'aai_top_hit' field in the 'completeness.tsv' output file. 
+You can implement this yourself by looking at the taxonomy (and also the source environment too) for the top hit to the genome database. 
+First, you can find the top hit info from the 'aai_top_hit' field in the 'completeness.tsv' output file. 
 Then you can look up the taxonomy of the top hit.
 If the top hit starts with 'DTR' look here at the 'lineage' field in 'checkv_circular.tsv' database file. 
 You can also look at 'habitat' field here as well. 

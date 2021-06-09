@@ -13,6 +13,7 @@ setup(
         "importlib-metadata>=0.12; python_version<'3.8'",
         "numpy>=1.5",
         "psutil",
+        "kcounter"
     ],
     python_requires=">=3.6",
     entry_points={"console_scripts": ["checkv=checkv.cli:cli"]},
