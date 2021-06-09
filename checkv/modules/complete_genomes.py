@@ -27,7 +27,9 @@ def fetch_arguments(parser):
     parser.set_defaults(func=main)
     parser.set_defaults(program="repeats")
     parser.add_argument(
-        "input", type=str, help="Input viral sequences in FASTA format",
+        "input",
+        type=str,
+        help="Input nucleotide sequences in FASTA format (.gz, .bz2 and .xz files are supported)",
     )
     parser.add_argument("output", type=str, help="Output directory")
     parser.add_argument(
