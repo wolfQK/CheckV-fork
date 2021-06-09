@@ -6,6 +6,7 @@ import shutil
 import checkv
 from checkv import utility
 
+csv.field_size_limit(sys.maxsize)
 
 class Genome:
     def __init__(self):
