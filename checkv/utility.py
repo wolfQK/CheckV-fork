@@ -13,6 +13,8 @@ import sys
 import time
 from enum import Enum, auto
 
+import kcounter
+import numpy as np
 import psutil
 from Bio import SeqIO
 
@@ -150,6 +152,11 @@ def read_fasta(path):
         if name != "" and seq != "":
             yield name, seq
     f.close()
+
+
+def get_average_kmer_freq(genome):
+    counts = list(kcounter.count_kmers(genome.seq, 21).values())
+    return round(np.mean(counts), 2)
 
 
 def run_prodigal(out):

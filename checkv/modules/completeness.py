@@ -1,13 +1,14 @@
 import argparse
 import bisect
 import csv
+import multiprocessing as mp
 import operator
 import os
 import shutil
 import time
-import numpy as np
-import kcounter
+
 import checkv
+import numpy as np
 from checkv import utility
 
 
@@ -486,21 +487,10 @@ def main(args):
         )
 
     logger.info("[7/8] Determining genome copy number...")
-    for genome in genomes.values():
-        # If the genome is longer than 350kb, use overlapping 21-mers to estimate
-        # the copy number.
-        if len(genome.seq) >= 350000:
-            counts = list(kcounter.count_kmers(genome.seq, 21).values())
-        # For short genomes, use long non-overlapping k-mers.
-        else:
-            counts = []
-            win_size = min([int(len(genome.seq) / 20), 2000])
-            start, end = 0, win_size
-            while end <= len(genome.seq):
-                counts.append(genome.seq.count(genome.seq[start:end]))
-                start += win_size
-                end += win_size
-    genome.kmer_freq = round(np.mean(counts), 2)
+    with mp.Pool(args["threads"]) as pool:
+        kmer_freq_list = pool.map(utility.get_average_kmer_freq, genomes.values())
+    for kmer_freq, genome in zip(kmer_freq_list, genomes.values()):
+        genome.kmer_freq = kmer_freq
 
     logger.info("[8/8] Writing results...")
     p = os.path.join(args["output"], "completeness.tsv")
