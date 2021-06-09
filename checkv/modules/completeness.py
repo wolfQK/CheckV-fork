@@ -448,6 +448,8 @@ def main(args):
     if not os.path.exists(args["tmp"]):
         os.makedirs(args["tmp"])
 
+    utility.check_fasta(args["input"], args["tmp"])
+
     logger.info(f"\nCheckV v{checkv.__version__}: completeness")
 
     args["faa"] = os.path.join(args["tmp"], "proteins.faa")
