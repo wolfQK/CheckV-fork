@@ -7,7 +7,6 @@ import multiprocessing as mp
 import os
 import platform
 import resource
-import shutil
 import signal
 import subprocess as sp
 import sys
@@ -86,7 +85,7 @@ def terminate_tree(pid, including_parent=True):
         parent.terminate()
 
 
-def parallel(function, argument_list, threads):
+def async_parallel(function, argument_list, threads):
     """ Based on: https://gist.github.com/admackin/003dd646e5fadee8b8d6 """
     # threads = len(argument_list) ## why is this being defined again here?
     pool = mp.Pool(threads, init_worker)
@@ -247,7 +246,7 @@ def search_hmms(tmp_dir, threads, db_dir):
         hmmdb = os.path.join(db_dir, f"{split}.hmm")
         faa = os.path.join(tmp_dir, "proteins.faa")
         args_list.append([out, hmmdb, faa])
-    parallel(run_hmmsearch, args_list, threads)
+    async_parallel(run_hmmsearch, args_list, threads)
     # check outputs are complete
     complete = []
     for file in os.listdir(hmm_dir):
@@ -299,7 +298,7 @@ def call_genes(in_fna, out_dir, threads):
     for i in range(1, threads + 1):
         out = os.path.join(tmp, str(i))
         args_list.append([out])
-    parallel(run_prodigal, args_list, threads)
+    async_parallel(run_prodigal, args_list, threads)
     # cat output
     with open(f"{tmp}.faa", "w") as f:
         for i in range(1, iteration + 1):
