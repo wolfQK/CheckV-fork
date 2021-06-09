@@ -22,7 +22,7 @@ def fetch_arguments(parser):
     parser.set_defaults(func=main)
     parser.set_defaults(program="contamination")
     parser.add_argument(
-        "input", type=str, help="Input nucleotide sequences in FASTA format",
+        "input", type=str, help="Input nucleotide sequences in FASTA format (.gz, .bz2 and .xz files are supported)",
     )
     parser.add_argument("output", type=str, help="Output directory")
     parser.add_argument(
@@ -377,10 +377,13 @@ def main(args):
         genomes[gene.genome_id].genes.append(gene.id)
 
     args["hmmout"] = os.path.join(args["tmp"], "hmmsearch.txt")
-    if not os.path.exists(args["hmmout"]):
+    args["hmmsearch_checkpoint"] = os.path.join(args["tmp"], "hmmsearch_checkpoint")
+    if not os.path.exists(args["hmmsearch_checkpoint"]):
         logger.info("[5/8] Running hmmsearch...")
         db_dir = os.path.join(args["db"], "hmm_db/checkv_hmms")
         utility.search_hmms(args["tmp"], args["threads"], db_dir)
+        with open(args["hmmsearch_checkpoint"], "w") as fout:
+            pass
     else:
         logger.info("[5/8] Skipping hmmsearch...")
 

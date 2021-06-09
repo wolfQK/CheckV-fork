@@ -59,7 +59,7 @@ def get_logger(quiet):
     return logging.getLogger()
 
 def check_fasta(path, tmp_dir):
-    checkpoint_file = os.path.join(tmp_dir, "input_validation")
+    checkpoint_file = os.path.join(tmp_dir, "input_validation_checkpoint")
     if not os.path.isfile(checkpoint_file):
         fasta_parser = SeqIO.parse(path, "fasta")
         if not any(fasta_parser):
