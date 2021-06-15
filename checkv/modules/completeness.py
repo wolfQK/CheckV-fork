@@ -465,11 +465,14 @@ def main(args):
     genes, genomes, refs, exclude, hmms = init_database(args)
 
     args["blastp"] = os.path.join(args["tmp"], "diamond.tsv")
-    if os.path.exists(args["blastp"]):
+    args["diamond_checkpoint"] = os.path.join(args["tmp"], "diamond_checkpoint")
+    if os.path.exists(args["diamond_checkpoint"]):
         logger.info("[3/8] Skipping DIAMOND blastp search...")
     else:
         logger.info("[3/8] Running DIAMOND blastp search...")
         utility.run_diamond(args["blastp"], args["db"], args["faa"], args["threads"])
+        with open(args["diamond_checkpoint"], "w") as fout:
+            pass
 
     args["aai"] = os.path.join(args["tmp"], "aai.tsv")
     if os.path.exists(args["aai"]):

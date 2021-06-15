@@ -1,5 +1,7 @@
+Version 0.8.1
+* Check for DIAMOND errors and DIAMOND output file (issues #15 and #39)
+
 Version 0.8.0
-* Check for DIAMOND errors and DIAMOND output file (issues #15 and #39, pull #5)
 * Check if input FASTA file is empty, wrongly formatted, or duplicated sequence IDs (issue #14, pull #5)
 * Check whether the execution of hmmsearch was completed before skipping it (pull #5)
 * Speed up kmer based genome copy number estimation (issue #26, pull #4)
