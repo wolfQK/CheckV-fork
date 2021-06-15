@@ -171,13 +171,6 @@ To avoid introducing unwanted breaking changes, we recommend developers and user
 pytest --database=/path/to/checkv-db --threads=16
 ```
 
-## Known Issues
-
-* DIAMOND v0.9.30 does not work on OSX
-* Excel formatting issue that corrupts data when imported to excel
-* (SOLVED) Bug in completeness module (v0.5.1) that suppresses output of HMM-based results
-
-
 ## Output files
 
 #### quality_summary.tsv

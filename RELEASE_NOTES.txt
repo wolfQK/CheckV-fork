@@ -1,4 +1,11 @@
-Version 0.7.0 (current release)
+Version 0.8.0
+* Check for DIAMOND errors and DIAMOND output file (issues #15 and #39, pull #5)
+* Check if input FASTA file is empty, wrongly formatted, or duplicated sequence IDs (issue #14, pull #5)
+* Check whether the execution of hmmsearch was completed before skipping it (pull #5)
+* Speed up kmer based genome copy number estimation (issue #26, pull #4)
+* Add a --remove_tmp flag to quality_summary and end_to end modules (pull #3)
+
+Version 0.7.0
 * update to contamination module to reduce false positive proviruses
  -require at least 2 host genes in proviral host regions, except for contigs with <= 10 genes. reduces false positives in real data.
  -improved sliding window algorithm: trailing window grows from last breakpoint while leading window has fixed size
