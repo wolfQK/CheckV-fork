@@ -1,4 +1,4 @@
-FROM quay.io/biocontainers/checkv:0.8.1--py_1
+FROM quay.io/biocontainers/checkv:0.8.1--pyhdfd78af_0
 LABEL maintainer="Antonio Camargo (antoniop.camargo@lbl.gov), Stephen Nayfach (snayfach@lbl.gov)"
 LABEL version="0.8.1"
 ENV CHECKVDB="/db/checkv-db-v1.0"

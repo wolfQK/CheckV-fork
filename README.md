@@ -4,7 +4,7 @@
 [![Conda](https://img.shields.io/conda/vn/bioconda/checkv.svg?label=Conda&color=green)](https://anaconda.org/bioconda/checkv)
 [![PyPI downloads](https://img.shields.io/pypi/dm/checkv?label=PyPI%20downloads&color=blue)](https://pypi.python.org/pypi/checkv)
 [![Conda downloads](https://img.shields.io/conda/dn/bioconda/checkv.svg?label=Conda%20downloads&color=blue)](https://anaconda.org/bioconda/checkv)
-[![Docker pulls](https://img.shields.io/docker/pulls/snayfach/checkv-0.7.0.svg?label=Docker%20pulls&color=blue)](https://hub.docker.com/r/snayfach/checkv-0.7.0)
+[![Docker pulls](https://img.shields.io/docker/pulls/antoniopcamargo/checkv.svg?label=Docker%20pulls&color=blue)](https://hub.docker.com/r/antoniopcamargo/checkv)
 
 CheckV is a fully automated command-line pipeline for assessing the quality of single-contig viral genomes, including identification of host contamination for integrated proviruses, estimating completeness for genome fragments, and identification of closed genomes.
 
@@ -151,13 +151,13 @@ checkv end_to_end input_file.fna output_directory -t 16
 - Pull the image (including the database)
 
 ```bash
-docker pull snayfach/checkv-0.7.0
+docker pull antoniopcamargo/checkv
 ```
 
 - Run the image
 
 ```bash
-docker run -ti --rm -v "$(pwd):/app" snayfach/checkv-0.7.0 end_to_end input_file.fna output_directory -t 16
+docker run -ti --rm -v "$(pwd):/app" antoniopcamargo/checkv end_to_end input_file.fna output_directory -t 16
 ```
 
 
