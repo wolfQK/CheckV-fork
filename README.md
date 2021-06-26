@@ -171,6 +171,11 @@ To avoid introducing unwanted breaking changes, we recommend developers and user
 pytest --database=/path/to/checkv-db --threads=16
 ```
 
+## Known issues
+* There was an issue with v0.8.1 in which conda sometimes installed an older version of DIAMOND. This caused an error preventing AAI-based completeness estimation. 
+* If you are running CheckV v0.8.1 make sure conda has installed DIAMOND version >= 2.0.9 
+
+
 ## Output files
 
 #### quality_summary.tsv
