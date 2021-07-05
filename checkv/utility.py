@@ -222,7 +222,7 @@ def run_diamond(out, db, faa, threads):
     p.wait()
 
 
-def run_hmmsearch(out, db, faa, threads=1, evalue=10):
+def run_hmmsearch(out, db, faa, threads=0, evalue=10):
     cmd = "hmmsearch "
     cmd += "--noali "
     cmd += "-o /dev/null "
